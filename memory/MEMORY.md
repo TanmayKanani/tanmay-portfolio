@@ -1,0 +1,3 @@
+- [Portfolio Creative Direction](project_portfolio_direction.md) — user wants wonder/memorability over editorial; CP as visual centerpiece; Awwwards SOTD ambition
+- [Project Master Context](project_master_context.md) — complete DESCENT concept: narrative, layers, interactions, tech architecture, 7-phase roadmap, all decisions
+- [Project Next Steps](project_next_steps.md) — current status, Phase 1 checklist, warnings, open questions (theme identity unresolved)
