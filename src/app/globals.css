@@ -1,28 +1,39 @@
 @import "tailwindcss";
 
 :root {
-  --surface-ground: #0f0d0b;
-  --machine-ground: #0a0806;
-  --core-ground: #060403;
-  --text-primary: #e8e2d8;
+  /* Void — the water itself */
+  --void-deep:    #000000;
+  --void-primary: #04060f;
+  --void-ambient: #070c18;
+  --void-edge:    #0c1220;
+
+  /* Bioluminescence — the life */
+  --bio-warm:  #f0ead8;
+  --bio-amber: #c8a96e;
+  --bio-pale:  #dde8f2;
+  --bio-cold:  #8fb8d4;
+
+  /* Text */
+  --text-primary:   #e8e2d8;
   --text-secondary: #6b6055;
-  --surface-amber: #c8a96e;
-  --machine-gold: #d4c9a0;
-  --core-light: #ede5cc;
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Easing */
+  --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-organism: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 @theme inline {
-  --color-surface-ground: var(--surface-ground);
-  --color-machine-ground: var(--machine-ground);
-  --color-core-ground: var(--core-ground);
+  --color-void-deep:    var(--void-deep);
+  --color-void-primary: var(--void-primary);
+  --color-void-ambient: var(--void-ambient);
+  --color-bio-warm:     var(--bio-warm);
+  --color-bio-amber:    var(--bio-amber);
+  --color-bio-pale:     var(--bio-pale);
+  --color-bio-cold:     var(--bio-cold);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
-  --color-surface-amber: var(--surface-amber);
-  --color-machine-gold: var(--machine-gold);
-  --color-core-light: var(--core-light);
   --font-garamond: var(--font-eb-garamond);
-  --font-mono: var(--font-ibm-plex-mono);
+  --font-mono:     var(--font-ibm-plex-mono);
 }
 
 *,
@@ -39,7 +50,7 @@ html {
 
 body {
   min-height: 100%;
-  background: var(--surface-ground);
+  background: var(--void-ambient);
   color: var(--text-primary);
   cursor: none;
   -webkit-font-smoothing: antialiased;

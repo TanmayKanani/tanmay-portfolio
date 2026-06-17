@@ -3,6 +3,7 @@ import { EB_Garamond, IBM_Plex_Mono } from 'next/font/google'
 import './globals.css'
 import LenisProvider from '@/components/providers/LenisProvider'
 import LayerProvider from '@/components/providers/LayerProvider'
+import OrganismCanvas from '@/components/canvas/OrganismCanvas'
 import Cursor from '@/components/ui/Cursor'
 import GrainCanvas from '@/components/ui/GrainCanvas'
 
@@ -37,8 +38,9 @@ export default function RootLayout({
       <body>
         <LayerProvider>
           <LenisProvider>
-            <Cursor />
+            <OrganismCanvas />
             <GrainCanvas />
+            <Cursor />
             {children}
           </LenisProvider>
         </LayerProvider>
