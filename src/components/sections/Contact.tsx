@@ -33,6 +33,21 @@ export default function Contact() {
         </h2>
       </Reveal>
 
+      <Reveal delay={0.06}>
+        <p
+          style={{
+            maxWidth: '42ch',
+            marginBottom: '2.4rem',
+            marginTop: '-0.6rem',
+            color: 'var(--text-muted)',
+            fontSize: 'clamp(1rem, 1.4vw, 1.15rem)',
+            lineHeight: 1.7,
+          }}
+        >
+          {site.contactSub}
+        </p>
+      </Reveal>
+
       <Reveal delay={0.1}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
           <Magnetic strength={0.4}>

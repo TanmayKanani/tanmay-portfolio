@@ -1,6 +1,6 @@
 'use client'
 
-import Reveal, { RevealGroup, RevealItem } from '@/components/ui/Reveal'
+import Reveal from '@/components/ui/Reveal'
 import SectionHeader from '@/components/ui/SectionHeader'
 import { site } from '@/lib/data/site'
 import { parseAccent } from '@/lib/text'
@@ -10,42 +10,41 @@ export default function About() {
     <section id="about" className="section">
       <SectionHeader index="01" label="About" />
 
-      <Reveal>
-        <p
-          className="font-serif"
-          style={{
-            fontSize: 'clamp(1.6rem, 3.4vw, 2.7rem)',
-            lineHeight: 1.32,
-            fontWeight: 400,
-            letterSpacing: '-0.01em',
-            maxWidth: '20ch',
-            marginBottom: 'clamp(3rem, 7vh, 5rem)',
-          }}
-        >
-          {parseAccent(site.about.statement)}
-        </p>
-      </Reveal>
-
-      <RevealGroup
+      <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: '2.5rem',
-          borderTop: '1px solid var(--line)',
-          paddingTop: '2.5rem',
+          gridTemplateColumns: 'minmax(0, 1fr)',
+          gap: 'clamp(1.6rem, 4vw, 2.4rem)',
+          maxWidth: 900,
         }}
       >
-        {site.about.columns.map((col) => (
-          <RevealItem key={col.title}>
-            <h3 className="eyebrow" style={{ marginBottom: '1rem', color: 'var(--accent-bri)' }}>
-              {col.title}
-            </h3>
-            <p style={{ color: 'var(--text-muted)', lineHeight: 1.7, fontSize: '0.98rem' }}>
-              {col.body}
-            </p>
-          </RevealItem>
-        ))}
-      </RevealGroup>
+        <Reveal>
+          <p
+            className="font-serif"
+            style={{
+              fontSize: 'clamp(1.9rem, 4.4vw, 3.4rem)',
+              lineHeight: 1.25,
+              fontWeight: 400,
+              letterSpacing: '-0.015em',
+            }}
+          >
+            {parseAccent(site.about.statement)}
+          </p>
+        </Reveal>
+
+        <Reveal delay={0.12}>
+          <p
+            style={{
+              fontSize: 'clamp(1.05rem, 1.6vw, 1.3rem)',
+              lineHeight: 1.75,
+              color: 'var(--text-muted)',
+              maxWidth: '60ch',
+            }}
+          >
+            {site.about.body}
+          </p>
+        </Reveal>
+      </div>
     </section>
   )
 }

@@ -30,34 +30,19 @@ export interface Social {
 export const site = {
   name: 'Tanmay Kanani',
   initials: 'TK',
-  role: 'Software Engineer · Competitive Programmer',
+  greeting: 'Hello, I’m',
+  role: 'Computer Science · Software Engineer',
   location: 'Ahmedabad, India',
-  coords: '23.02° N, 72.57° E',
   email: 'tanmaykanani8@gmail.com',
 
-  // headline — the asterisk word is rendered in the accent serif italic
-  headline: ['Code, contests', '& the space', '*between.*'],
-
+  // short, simple, classy
   intro:
-    'Computer-science student at Ahmedabad University and Competitive Programming Lead of the Programming Club. I build full-stack products and have solved 1,000+ problems across LeetCode, Codeforces and CodeChef.',
+    'A computer-science student and software engineer based in Ahmedabad, India. I build clean, dependable products — and I compete in algorithms to keep my fundamentals sharp.',
 
   about: {
     statement:
-      'I like problems with hard edges — a timetable that refuses to fit, a phishing link hiding in plain sight, a contest clock running down. I build the thing that *solves* it.',
-    columns: [
-      {
-        title: 'Now',
-        body: 'B.Tech CSE at Ahmedabad University (2024–28) and Competitive Programming Lead of the Programming Club — running contests and training members.',
-      },
-      {
-        title: 'Build with',
-        body: 'JavaScript & React, Django & Python, C++, with SQL / MongoDB and a Docker-and-Vercel deploy flow.',
-      },
-      {
-        title: 'Compete on',
-        body: 'LeetCode (1653), Codeforces & CodeChef — 1,000+ problems over 339 active days and 65 rated contests.',
-      },
-    ],
+      'I care about hard problems and *simple* solutions.',
+    body: 'From full-stack products to algorithm contests, I like building things that work — and making them feel effortless. Right now I’m studying Computer Science at Ahmedabad University and leading competitive programming at the Programming Club.',
   },
 
   projects: [
@@ -115,46 +100,31 @@ export const site = {
     { tag: 'Leadership', text: 'Competitive Programming Lead, Programming Club, Ahmedabad University (2026–present).' },
   ] as Achievement[],
 
+  // ── Competitive programming ──────────────────────────────────
+  // Live stats + heatmap are fetched server-side from these handles
+  // (see src/lib/cp.ts). `fallback` is used only if a fetch fails,
+  // so the section never looks broken.
   coding: {
-    totals: { solved: 1000, activeDays: 339, contests: 65 },
-    platforms: [
-      {
-        name: 'LeetCode',
-        handle: 'Tanmay_Kanani',
-        url: 'https://leetcode.com/u/Tanmay_Kanani/',
-        primary: { label: 'Rating', value: '1653' },
-        stats: [
-          { label: 'Solved', value: '470' },
-          { label: 'Percentile', value: 'Top 18%' },
-        ],
-        note: '100-day streak',
-      },
-      {
-        name: 'Codeforces',
-        handle: 'tanmay.k',
-        url: 'https://codeforces.com/profile/tanmay.k',
-        primary: { label: 'Solved', value: '494' },
-        stats: [
-          { label: 'Contests', value: '23' },
-          { label: 'Platform', value: 'Rated' },
-        ],
-        note: 'Active competitor',
-      },
-      {
-        name: 'CodeChef',
-        handle: 'tanmay_kanani',
-        url: 'https://www.codechef.com/users/tanmay_kanani',
-        primary: { label: 'Max rating', value: '1447' },
-        stats: [
-          { label: 'Stars', value: '2★' },
-          { label: 'Solved', value: '121' },
-        ],
-        note: 'Long & short challenges',
-      },
-    ],
+    leetcode: { handle: 'Tanmay_Kanani', url: 'https://leetcode.com/u/Tanmay_Kanani/' },
+    codeforces: { handle: 'tanmay.k', url: 'https://codeforces.com/profile/tanmay.k' },
+    // CodeChef has no stable public API — these stay as profile facts.
+    codechef: {
+      handle: 'tanmay_kanani',
+      url: 'https://www.codechef.com/users/tanmay_kanani',
+      maxRating: 1447,
+      stars: 2,
+      solved: 121,
+    },
+    fallback: {
+      totalSolved: 1000,
+      activeDays: 339,
+      leetcode: { solved: 470, rating: 1653, ranking: null as number | null },
+      codeforces: { solved: 494, rating: null as number | null, maxRating: null as number | null, contests: 23 },
+    },
   },
 
-  contactHeadline: ['Let’s build', 'something worth', '*remembering.*'],
+  contactHeadline: ['Let’s work', '*together.*'],
+  contactSub: 'Open to internships, collaborations, and genuinely hard problems.',
   resumeUrl: '#',
 
   socials: [

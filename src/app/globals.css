@@ -1,30 +1,30 @@
 @import "tailwindcss";
 
 /* ───────────────────────────────────────────────────────────
-   Refined modern-dark theme
+   Soft-luxe warm-dark theme — charcoal + champagne gold
    ─────────────────────────────────────────────────────────── */
 :root {
-  /* Surfaces */
-  --bg:          #08080b;
-  --bg-soft:     #0d0d12;
-  --panel:       #101017;
-  --panel-hi:    #16161f;
-  --line:        rgba(255, 255, 255, 0.08);
-  --line-soft:   rgba(255, 255, 255, 0.05);
+  /* Surfaces — warm near-black */
+  --bg:          #100d0a;
+  --bg-soft:     #16120d;
+  --panel:       #1a1510;
+  --panel-hi:    #221b14;
+  --line:        rgba(243, 236, 224, 0.09);
+  --line-soft:   rgba(243, 236, 224, 0.05);
 
-  /* Ink */
-  --text:        #f2f2f5;
-  --text-muted:  #9a9aa6;
-  --text-dim:    #5e5e6b;
+  /* Ink — warm cream */
+  --text:        #f4ede0;
+  --text-muted:  #b3a690;
+  --text-dim:    #786c5a;
 
-  /* Accent — electric indigo / violet */
-  --accent:      #7c6cff;
-  --accent-bri:  #9a8cff;
-  --accent-deep: #5b4ce0;
-  --accent-glow: rgba(124, 108, 255, 0.45);
+  /* Accent — champagne gold */
+  --accent:      #e0b86a;
+  --accent-bri:  #f1d292;
+  --accent-deep: #c79a4a;
+  --accent-glow: rgba(224, 184, 106, 0.40);
 
-  /* Warm highlight — used sparingly for stats */
-  --gold:        #f5c161;
+  /* Stat highlight (same warm family) */
+  --gold:        #f1d292;
 
   /* Motion */
   --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
@@ -82,7 +82,7 @@ body {
 
 ::selection {
   background: var(--accent);
-  color: #fff;
+  color: #1a1510;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -124,9 +124,9 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(60% 50% at 50% -8%, rgba(124, 108, 255, 0.16), transparent 70%),
-    radial-gradient(45% 45% at 88% 18%, rgba(124, 108, 255, 0.08), transparent 70%),
-    radial-gradient(50% 50% at 10% 92%, rgba(245, 193, 97, 0.05), transparent 70%);
+    radial-gradient(60% 50% at 50% -8%, rgba(224, 184, 106, 0.14), transparent 70%),
+    radial-gradient(45% 45% at 85% 15%, rgba(224, 184, 106, 0.07), transparent 70%),
+    radial-gradient(55% 55% at 12% 95%, rgba(199, 120, 60, 0.06), transparent 70%);
 }
 
 .grain {
@@ -173,13 +173,42 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
 .btn-accent {
   background: linear-gradient(180deg, var(--accent-bri), var(--accent-deep));
   border-color: transparent;
-  color: #fff;
-  box-shadow: 0 8px 30px -8px var(--accent-glow);
+  color: #1a1510;
+  font-weight: 500;
+  box-shadow: 0 10px 34px -10px var(--accent-glow);
 }
 .btn-accent:hover { background: linear-gradient(180deg, var(--accent-bri), var(--accent)); }
 
 /* ── Hairlines ──────────────────────────────────────────────── */
 .rule { height: 1px; width: 100%; background: var(--line); }
+
+/* ── Glass card ─────────────────────────────────────────────── */
+.glass {
+  background: linear-gradient(160deg, rgba(243, 236, 224, 0.045), rgba(243, 236, 224, 0.015));
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  backdrop-filter: blur(8px);
+}
+
+/* ── Animated underline link ────────────────────────────────── */
+.ul {
+  position: relative;
+  transition: color 0.35s var(--ease-out);
+}
+.ul::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 100%;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.45s var(--ease-out);
+}
+.ul:hover { color: var(--text); }
+.ul:hover::after { transform: scaleX(1); transform-origin: left; }
 
 /* Accessibility: respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
