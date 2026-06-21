@@ -1,80 +1,112 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMobile } from '@/lib/hooks/useMobile'
 
+/**
+ * A custom two-part cursor: a precise dot that tracks 1:1 and a ring
+ * that trails with a slight lag and grows when hovering interactive
+ * elements (anything that is, or lives inside, a / button / [data-hover]).
+ */
 export default function Cursor() {
-  const cursorRef = useRef<HTMLDivElement>(null)
+  const dotRef = useRef<HTMLDivElement>(null)
+  const ringRef = useRef<HTMLDivElement>(null)
   const isMobile = useMobile()
-  const posRef = useRef({ x: -100, y: -100 })
-  const currentRef = useRef({ x: -100, y: -100 })
-  const rafRef = useRef<number>(0)
+
+  const target = useRef({ x: -100, y: -100 })
+  const ring = useRef({ x: -100, y: -100 })
+  const raf = useRef(0)
+
+  const [hovering, setHovering] = useState(false)
+  const [down, setDown] = useState(false)
 
   useEffect(() => {
     if (isMobile) return
 
     const onMove = (e: MouseEvent) => {
-      posRef.current = { x: e.clientX, y: e.clientY }
+      target.current = { x: e.clientX, y: e.clientY }
+      if (dotRef.current) {
+        dotRef.current.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`
+      }
     }
+
+    const interactive = (el: EventTarget | null) =>
+      el instanceof Element && !!el.closest('a, button, [data-hover]')
+
+    const onOver = (e: MouseEvent) => setHovering(interactive(e.target))
+    const onDown = () => setDown(true)
+    const onUp = () => setDown(false)
+
     window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseover', onOver)
+    window.addEventListener('mousedown', onDown)
+    window.addEventListener('mouseup', onUp)
 
     const animate = () => {
-      // Lerp toward target for slight lag feel
-      currentRef.current.x += (posRef.current.x - currentRef.current.x) * 0.18
-      currentRef.current.y += (posRef.current.y - currentRef.current.y) * 0.18
-
-      if (cursorRef.current) {
-        cursorRef.current.style.transform = `translate(${currentRef.current.x - 7}px, ${currentRef.current.y - 7}px)`
+      ring.current.x += (target.current.x - ring.current.x) * 0.16
+      ring.current.y += (target.current.y - ring.current.y) * 0.16
+      if (ringRef.current) {
+        ringRef.current.style.transform = `translate3d(${ring.current.x}px, ${ring.current.y}px, 0) translate(-50%, -50%)`
       }
-      rafRef.current = requestAnimationFrame(animate)
+      raf.current = requestAnimationFrame(animate)
     }
-    rafRef.current = requestAnimationFrame(animate)
+    raf.current = requestAnimationFrame(animate)
 
     return () => {
       window.removeEventListener('mousemove', onMove)
-      cancelAnimationFrame(rafRef.current)
+      window.removeEventListener('mouseover', onOver)
+      window.removeEventListener('mousedown', onDown)
+      window.removeEventListener('mouseup', onUp)
+      cancelAnimationFrame(raf.current)
     }
   }, [isMobile])
 
   if (isMobile) return null
 
+  const ringSize = hovering ? 52 : 30
+  const scale = down ? 0.82 : 1
+
   return (
-    <div
-      ref={cursorRef}
-      className="fixed top-0 left-0 pointer-events-none"
-      style={{ zIndex: 50, willChange: 'transform' }}
-    >
-      <div className="relative" style={{ width: 14, height: 14 }}>
-        {/* Horizontal arm */}
-        <div
-          className="absolute inset-y-0 my-auto left-0 right-0"
-          style={{
-            height: 1,
-            background: 'rgba(232, 226, 216, 0.65)',
-          }}
-        />
-        {/* Vertical arm */}
-        <div
-          className="absolute inset-x-0 mx-auto top-0 bottom-0"
-          style={{
-            width: 1,
-            background: 'rgba(232, 226, 216, 0.65)',
-          }}
-        />
-        {/* Center dot */}
-        <div
-          className="absolute"
-          style={{
-            width: 2,
-            height: 2,
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            background: 'rgba(232, 226, 216, 0.9)',
-            borderRadius: '50%',
-          }}
-        />
-      </div>
-    </div>
+    <>
+      <div
+        ref={dotRef}
+        aria-hidden
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: 5,
+          height: 5,
+          marginLeft: -2.5,
+          marginTop: -2.5,
+          borderRadius: '50%',
+          background: 'var(--accent-bri)',
+          pointerEvents: 'none',
+          zIndex: 9999,
+          mixBlendMode: 'screen',
+          willChange: 'transform',
+        }}
+      />
+      <div
+        ref={ringRef}
+        aria-hidden
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: ringSize,
+          height: ringSize,
+          borderRadius: '50%',
+          border: `1px solid ${hovering ? 'var(--accent)' : 'rgba(242,242,245,0.4)'}`,
+          background: hovering ? 'rgba(124,108,255,0.08)' : 'transparent',
+          pointerEvents: 'none',
+          zIndex: 9998,
+          willChange: 'transform, width, height',
+          transition:
+            'width 0.35s var(--ease-out), height 0.35s var(--ease-out), border-color 0.35s, background 0.35s',
+          scale: String(scale),
+        }}
+      />
+    </>
   )
 }

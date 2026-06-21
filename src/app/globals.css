@@ -1,39 +1,52 @@
 @import "tailwindcss";
 
+/* ───────────────────────────────────────────────────────────
+   Refined modern-dark theme
+   ─────────────────────────────────────────────────────────── */
 :root {
-  /* Void — the water itself */
-  --void-deep:    #000000;
-  --void-primary: #04060f;
-  --void-ambient: #070c18;
-  --void-edge:    #0c1220;
+  /* Surfaces */
+  --bg:          #08080b;
+  --bg-soft:     #0d0d12;
+  --panel:       #101017;
+  --panel-hi:    #16161f;
+  --line:        rgba(255, 255, 255, 0.08);
+  --line-soft:   rgba(255, 255, 255, 0.05);
 
-  /* Bioluminescence — the life */
-  --bio-warm:  #f0ead8;
-  --bio-amber: #c8a96e;
-  --bio-pale:  #dde8f2;
-  --bio-cold:  #8fb8d4;
+  /* Ink */
+  --text:        #f2f2f5;
+  --text-muted:  #9a9aa6;
+  --text-dim:    #5e5e6b;
 
-  /* Text */
-  --text-primary:   #e8e2d8;
-  --text-secondary: #6b6055;
+  /* Accent — electric indigo / violet */
+  --accent:      #7c6cff;
+  --accent-bri:  #9a8cff;
+  --accent-deep: #5b4ce0;
+  --accent-glow: rgba(124, 108, 255, 0.45);
 
-  /* Easing */
-  --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-organism: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  /* Warm highlight — used sparingly for stats */
+  --gold:        #f5c161;
+
+  /* Motion */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-soft:   cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 @theme inline {
-  --color-void-deep:    var(--void-deep);
-  --color-void-primary: var(--void-primary);
-  --color-void-ambient: var(--void-ambient);
-  --color-bio-warm:     var(--bio-warm);
-  --color-bio-amber:    var(--bio-amber);
-  --color-bio-pale:     var(--bio-pale);
-  --color-bio-cold:     var(--bio-cold);
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --font-garamond: var(--font-eb-garamond);
-  --font-mono:     var(--font-ibm-plex-mono);
+  --color-bg:         var(--bg);
+  --color-bg-soft:    var(--bg-soft);
+  --color-panel:      var(--panel);
+  --color-panel-hi:   var(--panel-hi);
+  --color-text:       var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-dim:   var(--text-dim);
+  --color-accent:     var(--accent);
+  --color-accent-bri: var(--accent-bri);
+  --color-gold:       var(--gold);
+  --color-line:       var(--line);
+
+  --font-serif: var(--font-eb-garamond);
+  --font-sans:  var(--font-geist), system-ui, sans-serif;
+  --font-mono:  var(--font-ibm-plex-mono), monospace;
 }
 
 *,
@@ -45,24 +58,133 @@
 }
 
 html {
-  height: 100%;
+  scroll-behavior: auto; /* Lenis owns scrolling */
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   min-height: 100%;
-  background: var(--void-ambient);
-  color: var(--text-primary);
-  cursor: none;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  text-rendering: optimizeLegibility;
 }
 
-.preserve-3d {
-  transform-style: preserve-3d;
+@media (pointer: fine) {
+  body { cursor: none; }
+  a, button { cursor: none; }
 }
 
-.backface-hidden {
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; background: none; border: none; color: inherit; }
+
+/* ── Typography helpers ─────────────────────────────────────── */
+.font-serif { font-family: var(--font-serif); }
+.font-mono  { font-family: var(--font-mono); }
+
+.serif-accent {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 500;
+  color: var(--accent-bri);
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ── Reusable section frame ─────────────────────────────────── */
+.section {
+  position: relative;
+  width: 100%;
+  padding-inline: clamp(1.25rem, 5vw, 6rem);
+  padding-block: clamp(5rem, 12vh, 9rem);
+  max-width: 1320px;
+  margin-inline: auto;
+}
+
+/* ── Background atmosphere ──────────────────────────────────── */
+.atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 50% at 50% -8%, rgba(124, 108, 255, 0.16), transparent 70%),
+    radial-gradient(45% 45% at 88% 18%, rgba(124, 108, 255, 0.08), transparent 70%),
+    radial-gradient(50% 50% at 10% 92%, rgba(245, 193, 97, 0.05), transparent 70%);
+}
+
+.grain {
+  position: fixed;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+}
+
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(130% 130% at 50% 35%, transparent 55%, rgba(0, 0, 0, 0.55));
+}
+
+/* Content sits above atmosphere */
+.content { position: relative; z-index: 3; }
+
+/* ── Buttons / links ────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  padding: 0.85rem 1.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  transition: border-color 0.4s var(--ease-out), background 0.4s var(--ease-out),
+    color 0.4s var(--ease-out), transform 0.4s var(--ease-out);
+}
+.btn:hover {
+  border-color: var(--accent);
+  background: var(--panel-hi);
+}
+.btn-accent {
+  background: linear-gradient(180deg, var(--accent-bri), var(--accent-deep));
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 8px 30px -8px var(--accent-glow);
+}
+.btn-accent:hover { background: linear-gradient(180deg, var(--accent-bri), var(--accent)); }
+
+/* ── Hairlines ──────────────────────────────────────────────── */
+.rule { height: 1px; width: 100%; background: var(--line); }
+
+/* Accessibility: respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
 }

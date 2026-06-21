@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
-import { EB_Garamond, IBM_Plex_Mono } from 'next/font/google'
+import { EB_Garamond, IBM_Plex_Mono, Geist } from 'next/font/google'
 import './globals.css'
 import LenisProvider from '@/components/providers/LenisProvider'
-import LayerProvider from '@/components/providers/LayerProvider'
-import OrganismCanvas from '@/components/canvas/OrganismCanvas'
 import Cursor from '@/components/ui/Cursor'
-import GrainCanvas from '@/components/ui/GrainCanvas'
+import Grain from '@/components/ui/Grain'
+import ScrollProgress from '@/components/ui/ScrollProgress'
+import Nav from '@/components/layout/Nav'
+import { site } from '@/lib/data/site'
 
 const ebGaramond = EB_Garamond({
   variable: '--font-eb-garamond',
@@ -20,9 +21,20 @@ const ibmPlexMono = IBM_Plex_Mono({
   weight: ['400', '500'],
 })
 
+const geist = Geist({
+  variable: '--font-geist',
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600'],
+})
+
 export const metadata: Metadata = {
-  title: 'Tanmay Kanani',
-  description: 'Computer Science student, competitive programmer, software developer.',
+  title: `${site.name} — ${site.role}`,
+  description: site.intro,
+  openGraph: {
+    title: `${site.name} — Software Engineer & Competitive Programmer`,
+    description: site.intro,
+    type: 'website',
+  },
 }
 
 export default function RootLayout({
@@ -33,17 +45,18 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${ebGaramond.variable} ${ibmPlexMono.variable}`}
+      className={`${ebGaramond.variable} ${ibmPlexMono.variable} ${geist.variable}`}
     >
       <body>
-        <LayerProvider>
-          <LenisProvider>
-            <OrganismCanvas />
-            <GrainCanvas />
-            <Cursor />
-            {children}
-          </LenisProvider>
-        </LayerProvider>
+        <div className="atmosphere" aria-hidden="true" />
+        <Grain />
+        <div className="vignette" aria-hidden="true" />
+        <Cursor />
+        <ScrollProgress />
+        <LenisProvider>
+          <Nav />
+          <div className="content">{children}</div>
+        </LenisProvider>
       </body>
     </html>
   )
