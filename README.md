@@ -6,10 +6,11 @@ motion throughout.
 
 ## Design
 
-- **Aesthetic** — an immersive **cosmic 3D world**: a real-time deep-space scene
-  (react-three-fiber) with a drifting nebula, thousands of stars, warp streaks on
-  scroll, and a glowing, morphing core that shifts colour and sinks away as you
-  travel — with real bloom post-processing. Content floats over the void in glass.
+- **Aesthetic** — a **watercolour experience** (David-Whyte inspired): paper + ink,
+  with a real **GPU fluid simulation** (`webgl-fluid`) as the signature interaction —
+  moving the cursor pushes flowing watercolour that blooms and dissipates behind the
+  content. Tune the feel via `FluidCanvas` (`DENSITY_DISSIPATION`, `COLOR_UPDATE_SPEED`)
+  and the canvas `opacity` in `globals.css`.
 - **Type** — EB Garamond (serif display), Geist (sans body/labels).
 - **Signature interaction** — a **scratch-to-reveal hero**: a paper layer you erase
   with the cursor (`ScratchReveal`) to uncover a living **watercolour wash**

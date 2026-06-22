@@ -1,32 +1,29 @@
 @import "tailwindcss";
 
 /* ───────────────────────────────────────────────────────────
-   Cosmic · deep-space cinematic theme
+   Watercolour · paper + ink (David-Whyte inspired)
+   the colour comes from the live fluid simulation
    ─────────────────────────────────────────────────────────── */
 :root {
-  --bg:          #05060f;
-  --bg-soft:     #0a0c1c;
-  --panel:       #0e1126;
-  --panel-hi:    #141838;
-  --line:        rgba(180, 200, 255, 0.14);
-  --line-soft:   rgba(180, 200, 255, 0.07);
+  --bg:          #f4ece0;
+  --bg-soft:     #ece1cf;
+  --panel:       #ece1cf;
+  --panel-hi:    #e4d7c0;
+  --line:        rgba(28, 23, 18, 0.16);
+  --line-soft:   rgba(28, 23, 18, 0.08);
 
-  /* Starlight ink */
-  --text:        #e9eeff;
-  --text-muted:  #9aa3c8;
-  --text-dim:    #5c6390;
+  --text:        #1c1712;
+  --text-muted:  #5d5446;
+  --text-dim:    #9a8d78;
 
-  /* Accent — plasma cyan */
-  --accent:      #46e1ff;
-  --accent-bri:  #8af0ff;
-  --accent-deep: #1aa6cf;
-  --accent-glow: rgba(70, 225, 255, 0.5);
+  /* Ink accent */
+  --accent:      #284b5e;
+  --accent-bri:  #356176;
+  --accent-deep: #16313f;
+  --accent-glow: rgba(40, 75, 94, 0.30);
 
-  /* Secondary — magenta */
-  --magenta:     #ff5ad8;
-
-  /* Stat highlight — star gold */
-  --gold:        #ffd27a;
+  /* Sienna highlight for stats */
+  --gold:        #b2563a;
 
   --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
   --ease-soft:   cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -42,7 +39,6 @@
   --color-text-dim:   var(--text-dim);
   --color-accent:     var(--accent);
   --color-accent-bri: var(--accent-bri);
-  --color-magenta:    var(--magenta);
   --color-gold:       var(--gold);
   --color-line:       var(--line);
 
@@ -104,7 +100,7 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
 .eyebrow {
   font-family: var(--font-mono);
   font-size: 0.72rem;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.26em;
   text-transform: uppercase;
   color: var(--text-dim);
 }
@@ -119,7 +115,20 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   margin-inline: auto;
 }
 
-/* faint film grain over the cosmos */
+/* The fluid simulation canvas sits behind the content; multiply makes the
+   paint stain the paper like real watercolour instead of glowing neon. */
+.fluid {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  opacity: 0.7;
+}
+.no-fluid .fluid { display: none; }
+
+/* paper grain */
 .grain {
   position: fixed;
   inset: -50%;
@@ -127,8 +136,16 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   height: 200%;
   z-index: 2;
   pointer-events: none;
-  opacity: 0.05;
-  mix-blend-mode: overlay;
+  opacity: 0.10;
+  mix-blend-mode: multiply;
+}
+
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(130% 130% at 50% 35%, transparent 62%, rgba(60, 44, 28, 0.10));
 }
 
 .content { position: relative; z-index: 3; }
@@ -143,27 +160,26 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   letter-spacing: 0.03em;
   padding: 0.85rem 1.5rem;
   border-radius: 999px;
-  border: 1px solid var(--line);
-  background: rgba(14, 17, 38, 0.5);
-  backdrop-filter: blur(6px);
+  border: 1px solid var(--text);
+  background: rgba(244, 236, 224, 0.55);
+  backdrop-filter: blur(4px);
   transition: color 0.4s var(--ease-out), background 0.4s var(--ease-out),
-    border-color 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out);
+    border-color 0.4s var(--ease-out);
 }
-.btn:hover { border-color: var(--accent); box-shadow: 0 0 24px -6px var(--accent-glow); }
+.btn:hover { background: var(--text); color: var(--bg); }
 .btn-accent {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--bg);
-  box-shadow: 0 0 30px -6px var(--accent-glow);
 }
-.btn-accent:hover { background: var(--accent-bri); border-color: var(--accent-bri); }
+.btn-accent:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
 
-/* ── Glass card ─────────────────────────────────────────────── */
+/* ── Glass / paper card ─────────────────────────────────────── */
 .glass {
-  background: rgba(14, 17, 38, 0.45);
+  background: rgba(244, 236, 224, 0.55);
   border: 1px solid var(--line);
   border-radius: 16px;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(6px);
 }
 
 /* ── Animated underline link ────────────────────────────────── */
@@ -182,8 +198,6 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
 .ul:hover::after { transform: scaleX(1); transform-origin: left; }
 
 .rule { height: 1px; width: 100%; background: var(--line); }
-
-.kinetic { will-change: transform; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

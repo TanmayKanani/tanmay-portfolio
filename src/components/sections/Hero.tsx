@@ -57,7 +57,6 @@ export default function Hero() {
             fontWeight: 500,
             letterSpacing: '-0.03em',
             margin: 0,
-            textShadow: '0 0 60px rgba(5,6,15,0.6)',
           }}
         >
           {name.split(' ').map((word, wi) => (
@@ -141,6 +140,7 @@ export default function Hero() {
         }}
       >
         <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>{site.location}</span>
+        <span className="eyebrow" style={{ opacity: 0.8 }}>✦ move to paint ✦</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
           <span className="eyebrow">Scroll</span>
           <motion.span

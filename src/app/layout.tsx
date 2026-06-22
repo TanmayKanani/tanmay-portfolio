@@ -3,7 +3,7 @@ import { EB_Garamond, IBM_Plex_Mono, Geist } from 'next/font/google'
 import './globals.css'
 import LenisProvider from '@/components/providers/LenisProvider'
 import Loader from '@/components/ui/Loader'
-import CosmicScene from '@/components/canvas/CosmicScene'
+import FluidCanvas from '@/components/canvas/FluidCanvas'
 import Cursor from '@/components/ui/Cursor'
 import Grain from '@/components/ui/Grain'
 import ScrollProgress from '@/components/ui/ScrollProgress'
@@ -52,8 +52,9 @@ export default function RootLayout({
     >
       <body>
         <Loader />
-        <CosmicScene />
+        <FluidCanvas />
         <Grain />
+        <div className="vignette" aria-hidden="true" />
         <Cursor />
         <ScrollProgress />
         <LenisProvider>
