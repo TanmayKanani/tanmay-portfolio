@@ -45,20 +45,33 @@ export default function FluidCanvas() {
             COLOR_PALETTE: PALETTE,
             SIM_RESOLUTION: 128,
             DYE_RESOLUTION: 1024,
-            DENSITY_DISSIPATION: 0.7, // lower = paint lingers longer (tune to taste)
-            VELOCITY_DISSIPATION: 1.1,
+            DENSITY_DISSIPATION: 1.3, // lower = paint lingers longer (tune to taste)
+            VELOCITY_DISSIPATION: 1.2,
             PRESSURE: 0.8,
             PRESSURE_ITERATIONS: 20,
             CURL: 26,
-            SPLAT_RADIUS: 0.32,
-            SPLAT_FORCE: 7000,
+            SPLAT_RADIUS: 0.4,
+            SPLAT_FORCE: 8000,
             SHADING: true,
-            COLORFUL: true, // drift hue so hover (no click) still paints
-            COLOR_UPDATE_SPEED: 2.5,
+            COLORFUL: true, // drift colour (seed below guarantees an initial colour)
+            COLOR_UPDATE_SPEED: 3,
             BLOOM: true,
             BLOOM_INTENSITY: 0.7,
             BLOOM_RESOLUTION: 256,
           })
+
+          // Seed a pointer + colour right away (webgl-fluid only colours the
+          // pointer on mousedown / over time), so the first cursor move paints.
+          const seedAt = (cx: number, cy: number, type: string) => {
+            if (!ref.current) return
+            const rect = ref.current.getBoundingClientRect()
+            const ev = new MouseEvent(type, { clientX: cx, clientY: cy, bubbles: false, cancelable: true, view: window })
+            Object.defineProperty(ev, 'offsetX', { value: cx - rect.left })
+            Object.defineProperty(ev, 'offsetY', { value: cy - rect.top })
+            ref.current.dispatchEvent(ev)
+          }
+          // seed off in a corner so it isn't a splash over the hero text
+          seedAt(40, window.innerHeight - 40, 'mousedown')
 
           // Forward window pointer activity to the canvas the lib listens on.
           // webgl-fluid reads offsetX/offsetY (0 on synthetic events) so we set

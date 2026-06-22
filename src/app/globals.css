@@ -124,7 +124,7 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   width: 100vw;
   height: 100vh;
   pointer-events: none;
-  opacity: 0.7;
+  opacity: 0.85;
 }
 .no-fluid .fluid { display: none; }
 
