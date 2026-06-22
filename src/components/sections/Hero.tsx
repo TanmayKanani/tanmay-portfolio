@@ -2,8 +2,6 @@
 
 import { motion } from 'framer-motion'
 import { EASE } from '@/lib/motion'
-import WatercolorWash from '@/components/canvas/WatercolorWash'
-import ScratchReveal from '@/components/canvas/ScratchReveal'
 import Magnetic from '@/components/ui/Magnetic'
 import { site } from '@/lib/data/site'
 
@@ -28,33 +26,38 @@ export default function Hero() {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
-        overflow: 'hidden',
         paddingInline: 'clamp(1.25rem, 5vw, 6rem)',
       }}
     >
-      {/* revealed beneath the scratch layer */}
-      <WatercolorWash />
-
-      <div style={{ position: 'relative', zIndex: 2, maxWidth: 1320, margin: '0 auto', width: '100%' }}>
+      <div style={{ position: 'relative', maxWidth: 1320, margin: '0 auto', width: '100%' }}>
         <motion.div
-          custom={0.1}
+          custom={1.0}
           initial="hidden"
           animate="show"
           variants={fade}
           style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', marginBottom: '1.6rem' }}
         >
-          <span className="rule" style={{ width: 40, flex: '0 0 40px' }} />
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              background: 'var(--accent)',
+              boxShadow: '0 0 16px var(--accent-glow)',
+            }}
+          />
           <span className="eyebrow">{site.greeting}</span>
         </motion.div>
 
         <h1
-          className="font-serif kinetic"
+          className="font-serif"
           style={{
             fontSize: 'clamp(3.2rem, 13vw, 11rem)',
             lineHeight: 0.94,
             fontWeight: 500,
             letterSpacing: '-0.03em',
             margin: 0,
+            textShadow: '0 0 60px rgba(5,6,15,0.6)',
           }}
         >
           {name.split(' ').map((word, wi) => (
@@ -62,7 +65,7 @@ export default function Hero() {
               <motion.span
                 initial={{ y: '110%' }}
                 animate={{ y: '0%' }}
-                transition={{ duration: 1, ease: EASE, delay: 0.3 + wi * 0.14 }}
+                transition={{ duration: 1, ease: EASE, delay: 1.0 + wi * 0.14 }}
                 style={{ display: 'inline-block' }}
               >
                 {word}
@@ -72,7 +75,7 @@ export default function Hero() {
         </h1>
 
         <motion.div
-          custom={0.9}
+          custom={1.5}
           initial="hidden"
           animate="show"
           variants={fade}
@@ -85,7 +88,7 @@ export default function Hero() {
         </motion.div>
 
         <motion.p
-          custom={1.05}
+          custom={1.65}
           initial="hidden"
           animate="show"
           variants={fade}
@@ -101,7 +104,7 @@ export default function Hero() {
         </motion.p>
 
         <motion.div
-          custom={1.2}
+          custom={1.8}
           initial="hidden"
           animate="show"
           variants={fade}
@@ -121,11 +124,13 @@ export default function Hero() {
         </motion.div>
       </div>
 
-      {/* location + scroll cue */}
-      <div
+      <motion.div
+        custom={2.0}
+        initial="hidden"
+        animate="show"
+        variants={fade}
         style={{
           position: 'absolute',
-          zIndex: 2,
           bottom: 'clamp(1.5rem, 4vh, 2.5rem)',
           left: 0,
           right: 0,
@@ -147,10 +152,7 @@ export default function Hero() {
             ↓
           </motion.span>
         </div>
-      </div>
-
-      {/* the scratch-to-reveal layer (on top) */}
-      <ScratchReveal />
+      </motion.div>
     </section>
   )
 }

@@ -6,8 +6,10 @@ motion throughout.
 
 ## Design
 
-- **Aesthetic** — electric editorial: a saturated ultramarine/cobalt field, warm
-  bone-cream type, a coral accent with cyan glints and an amber stat highlight.
+- **Aesthetic** — an immersive **cosmic 3D world**: a real-time deep-space scene
+  (react-three-fiber) with a drifting nebula, thousands of stars, warp streaks on
+  scroll, and a glowing, morphing core that shifts colour and sinks away as you
+  travel — with real bloom post-processing. Content floats over the void in glass.
 - **Type** — EB Garamond (serif display), Geist (sans body/labels).
 - **Signature interaction** — a **scratch-to-reveal hero**: a paper layer you erase
   with the cursor (`ScratchReveal`) to uncover a living **watercolour wash**

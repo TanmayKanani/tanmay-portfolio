@@ -1,39 +1,32 @@
 @import "tailwindcss";
 
 /* ───────────────────────────────────────────────────────────
-   Ultramarine · electric editorial theme
-   deep cobalt field · bone type · coral + cyan electric accents
+   Cosmic · deep-space cinematic theme
    ─────────────────────────────────────────────────────────── */
 :root {
-  --bg:          #0f1a4c;
-  --bg-soft:     #15225e;
-  --panel:       #1a2868;
-  --panel-hi:    #213079;
-  --line:        rgba(243, 236, 216, 0.16);
-  --line-soft:   rgba(243, 236, 216, 0.08);
+  --bg:          #05060f;
+  --bg-soft:     #0a0c1c;
+  --panel:       #0e1126;
+  --panel-hi:    #141838;
+  --line:        rgba(180, 200, 255, 0.14);
+  --line-soft:   rgba(180, 200, 255, 0.07);
 
-  /* Bone / cream ink */
-  --text:        #f4edd9;
-  --text-muted:  #aeb4d8;
-  --text-dim:    #6e78ac;
+  /* Starlight ink */
+  --text:        #e9eeff;
+  --text-muted:  #9aa3c8;
+  --text-dim:    #5c6390;
 
-  /* Accent — electric coral */
-  --accent:      #ff6f4d;
-  --accent-bri:  #ff8f72;
-  --accent-deep: #e44e2c;
-  --accent-glow: rgba(255, 111, 77, 0.45);
+  /* Accent — plasma cyan */
+  --accent:      #46e1ff;
+  --accent-bri:  #8af0ff;
+  --accent-deep: #1aa6cf;
+  --accent-glow: rgba(70, 225, 255, 0.5);
 
-  /* Electric cyan (secondary glints) */
-  --cyan:        #5fe3da;
+  /* Secondary — magenta */
+  --magenta:     #ff5ad8;
 
-  /* Stat highlight — warm amber */
+  /* Stat highlight — star gold */
   --gold:        #ffd27a;
-
-  /* Electric wash hues (hero + trail) */
-  --w1: #ff6f4d;
-  --w2: #5fe3da;
-  --w3: #9db0ff;
-  --w4: #ffd27a;
 
   --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
   --ease-soft:   cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -49,8 +42,8 @@
   --color-text-dim:   var(--text-dim);
   --color-accent:     var(--accent);
   --color-accent-bri: var(--accent-bri);
+  --color-magenta:    var(--magenta);
   --color-gold:       var(--gold);
-  --color-cyan:       var(--cyan);
   --color-line:       var(--line);
 
   --font-serif: var(--font-eb-garamond);
@@ -111,7 +104,7 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
 .eyebrow {
   font-family: var(--font-mono);
   font-size: 0.72rem;
-  letter-spacing: 0.26em;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
   color: var(--text-dim);
 }
@@ -126,18 +119,7 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   margin-inline: auto;
 }
 
-/* ── Atmosphere: electric blooms on cobalt ──────────────────── */
-.atmosphere {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(45% 40% at 82% 8%, rgba(255, 111, 77, 0.16), transparent 70%),
-    radial-gradient(42% 38% at 10% 92%, rgba(95, 227, 218, 0.12), transparent 70%),
-    radial-gradient(40% 36% at 50% 50%, rgba(157, 176, 255, 0.08), transparent 70%);
-}
-
+/* faint film grain over the cosmos */
 .grain {
   position: fixed;
   inset: -50%;
@@ -147,14 +129,6 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   pointer-events: none;
   opacity: 0.05;
   mix-blend-mode: overlay;
-}
-
-.vignette {
-  position: fixed;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  background: radial-gradient(130% 130% at 50% 35%, transparent 58%, rgba(4, 8, 30, 0.55));
 }
 
 .content { position: relative; z-index: 3; }
@@ -169,26 +143,27 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   letter-spacing: 0.03em;
   padding: 0.85rem 1.5rem;
   border-radius: 999px;
-  border: 1px solid var(--text);
-  background: transparent;
+  border: 1px solid var(--line);
+  background: rgba(14, 17, 38, 0.5);
+  backdrop-filter: blur(6px);
   transition: color 0.4s var(--ease-out), background 0.4s var(--ease-out),
-    border-color 0.4s var(--ease-out);
+    border-color 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out);
 }
-.btn:hover { background: var(--text); color: var(--bg); }
+.btn:hover { border-color: var(--accent); box-shadow: 0 0 24px -6px var(--accent-glow); }
 .btn-accent {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--bg);
-  box-shadow: 0 10px 34px -10px var(--accent-glow);
+  box-shadow: 0 0 30px -6px var(--accent-glow);
 }
 .btn-accent:hover { background: var(--accent-bri); border-color: var(--accent-bri); }
 
 /* ── Glass card ─────────────────────────────────────────────── */
 .glass {
-  background: rgba(243, 236, 216, 0.045);
+  background: rgba(14, 17, 38, 0.45);
   border: 1px solid var(--line);
   border-radius: 16px;
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(10px);
 }
 
 /* ── Animated underline link ────────────────────────────────── */
@@ -208,12 +183,7 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
 
 .rule { height: 1px; width: 100%; background: var(--line); }
 
-/* ── Kinetic scroll typography ──────────────────────────────── */
-.kinetic {
-  transform: skewY(var(--vskew, 0deg)) scaleY(var(--vstretch, 1));
-  transform-origin: left center;
-  will-change: transform;
-}
+.kinetic { will-change: transform; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

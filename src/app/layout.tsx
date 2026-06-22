@@ -3,8 +3,7 @@ import { EB_Garamond, IBM_Plex_Mono, Geist } from 'next/font/google'
 import './globals.css'
 import LenisProvider from '@/components/providers/LenisProvider'
 import Loader from '@/components/ui/Loader'
-import InkTrail from '@/components/canvas/InkTrail'
-import KineticScroll from '@/components/ui/KineticScroll'
+import CosmicScene from '@/components/canvas/CosmicScene'
 import Cursor from '@/components/ui/Cursor'
 import Grain from '@/components/ui/Grain'
 import ScrollProgress from '@/components/ui/ScrollProgress'
@@ -53,12 +52,9 @@ export default function RootLayout({
     >
       <body>
         <Loader />
-        <div className="atmosphere" aria-hidden="true" />
-        <InkTrail />
+        <CosmicScene />
         <Grain />
-        <div className="vignette" aria-hidden="true" />
         <Cursor />
-        <KineticScroll />
         <ScrollProgress />
         <LenisProvider>
           <Nav />

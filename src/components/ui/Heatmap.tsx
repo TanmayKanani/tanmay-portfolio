@@ -17,7 +17,7 @@ function level(count: number, max: number): number {
 }
 
 const COLORS = [
-  'rgba(243, 236, 216, 0.08)', // empty
+  'rgba(180, 200, 255, 0.08)', // empty
   'rgba(95, 227, 218, 0.30)',
   'rgba(95, 227, 218, 0.52)',
   'rgba(255, 111, 77, 0.66)',
@@ -96,7 +96,7 @@ export default function Heatmap({ cells, max }: { cells: HeatCell[]; max: number
                       height: 13,
                       borderRadius: 3,
                       background: COLORS[lv],
-                      boxShadow: lv >= 4 ? '0 0 9px rgba(255,111,77,0.6)' : 'none',
+                      boxShadow: lv >= 4 ? '0 0 9px rgba(70,225,255,0.6)' : 'none',
                       cursor: 'pointer',
                     }}
                   />
