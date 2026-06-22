@@ -6,8 +6,8 @@ motion throughout.
 
 ## Design
 
-- **Aesthetic** — watercolour on paper: warm ivory, ink-black type, an ink blue-teal
-  accent with a sienna highlight for stats. David-Whyte-inspired but its own thing.
+- **Aesthetic** — electric editorial: a saturated ultramarine/cobalt field, warm
+  bone-cream type, a coral accent with cyan glints and an amber stat highlight.
 - **Type** — EB Garamond (serif display), Geist (sans body/labels).
 - **Signature interaction** — a **scratch-to-reveal hero**: a paper layer you erase
   with the cursor (`ScratchReveal`) to uncover a living **watercolour wash**

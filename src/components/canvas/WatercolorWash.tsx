@@ -12,11 +12,11 @@ interface Blob {
   phase: number
 }
 
-const HUES = ['#2f6175', '#4a8f8c', '#b2563a', '#6a5a9c', '#c98a4b']
+const HUES = ['#ff6f4d', '#5fe3da', '#9db0ff', '#ffd27a', '#ff6f4d']
 
 /**
- * Opaque watercolor layer: paper fill + slowly drifting, multiply-blended
- * colour blooms. Sits beneath the hero text and the scratch overlay.
+ * Opaque hero layer: cobalt fill + slowly drifting, additively-blended glowing
+ * blooms (an electric aurora). Sits beneath the hero text and scratch overlay.
  */
 export default function WatercolorWash() {
   const ref = useRef<HTMLCanvasElement>(null)
@@ -62,7 +62,7 @@ export default function WatercolorWash() {
       ctx.fillStyle = paper
       ctx.fillRect(0, 0, w, h)
 
-      ctx.globalCompositeOperation = 'multiply'
+      ctx.globalCompositeOperation = 'lighter'
       for (const b of blobs) {
         if (!reduced) {
           b.x += b.vx
@@ -72,8 +72,8 @@ export default function WatercolorWash() {
         }
         const pr = b.r * (0.92 + Math.sin(t * 0.0004 + b.phase) * 0.08)
         const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, pr)
-        g.addColorStop(0, b.hue + 'cc')
-        g.addColorStop(0.55, b.hue + '55')
+        g.addColorStop(0, b.hue + '99')
+        g.addColorStop(0.55, b.hue + '33')
         g.addColorStop(1, b.hue + '00')
         ctx.fillStyle = g
         ctx.beginPath()

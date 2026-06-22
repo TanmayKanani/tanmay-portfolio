@@ -20,7 +20,7 @@ export default function About() {
       >
         <Reveal>
           <p
-            className="font-serif"
+            className="font-serif kinetic"
             style={{
               fontSize: 'clamp(1.9rem, 4.4vw, 3.4rem)',
               lineHeight: 1.25,

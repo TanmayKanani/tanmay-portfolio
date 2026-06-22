@@ -26,7 +26,7 @@ export default function SectionHeader({ index, label, title }: SectionHeaderProp
       </div>
       {title && (
         <h2
-          className="font-serif"
+          className="font-serif kinetic"
           style={{
             fontSize: 'clamp(1.9rem, 4vw, 3rem)',
             fontWeight: 500,

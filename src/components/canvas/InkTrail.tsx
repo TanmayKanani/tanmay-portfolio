@@ -11,12 +11,12 @@ interface Stamp {
   max: number
 }
 
-const HUES = ['#2f6175', '#4a8f8c', '#b2563a', '#6a5a9c', '#c98a4b']
+const HUES = ['#ff6f4d', '#5fe3da', '#9db0ff', '#ffd27a', '#f4edd9']
 
 /**
- * Sitewide watercolour trail: moving the cursor anywhere paints ink blooms
- * that spread and fade. Fixed full-viewport canvas behind the content, so
- * every section reacts — not just the hero. Multiply-blended onto the paper.
+ * Sitewide electric light-trail: moving the cursor anywhere paints glowing
+ * blooms that spread and fade. Fixed full-viewport canvas, additively blended
+ * onto the cobalt field so every section lights up — not just the hero.
  */
 export default function InkTrail() {
   const ref = useRef<HTMLCanvasElement>(null)
@@ -70,7 +70,7 @@ export default function InkTrail() {
     let raf = 0
     const render = () => {
       ctx.clearRect(0, 0, w, h)
-      ctx.globalCompositeOperation = 'multiply'
+      ctx.globalCompositeOperation = 'lighter'
       for (let i = stamps.length - 1; i >= 0; i--) {
         const s = stamps[i]
         s.life -= 0.012
@@ -116,7 +116,7 @@ export default function InkTrail() {
         height: '100%',
         zIndex: 1,
         pointerEvents: 'none',
-        mixBlendMode: 'multiply',
+        mixBlendMode: 'screen',
       }}
     />
   )

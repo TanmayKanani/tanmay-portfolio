@@ -16,7 +16,7 @@ export default function Contact() {
 
       <Reveal y={36}>
         <h2
-          className="font-serif"
+          className="font-serif kinetic"
           style={{
             fontSize: 'clamp(2.6rem, 8vw, 6rem)',
             fontWeight: 500,

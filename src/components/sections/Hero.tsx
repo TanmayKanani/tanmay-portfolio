@@ -48,7 +48,7 @@ export default function Hero() {
         </motion.div>
 
         <h1
-          className="font-serif"
+          className="font-serif kinetic"
           style={{
             fontSize: 'clamp(3.2rem, 13vw, 11rem)',
             lineHeight: 0.94,

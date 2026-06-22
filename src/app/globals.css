@@ -1,36 +1,39 @@
 @import "tailwindcss";
 
 /* ───────────────────────────────────────────────────────────
-   Watercolor · paper + ink theme
+   Ultramarine · electric editorial theme
+   deep cobalt field · bone type · coral + cyan electric accents
    ─────────────────────────────────────────────────────────── */
 :root {
-  /* Paper surfaces */
-  --bg:          #f3ebdd;
-  --bg-soft:     #ece1cf;
-  --panel:       #ece1cf;
-  --panel-hi:    #e4d8c2;
-  --line:        rgba(29, 24, 19, 0.16);
-  --line-soft:   rgba(29, 24, 19, 0.08);
+  --bg:          #0f1a4c;
+  --bg-soft:     #15225e;
+  --panel:       #1a2868;
+  --panel-hi:    #213079;
+  --line:        rgba(243, 236, 216, 0.16);
+  --line-soft:   rgba(243, 236, 216, 0.08);
 
-  /* Ink */
-  --text:        #1d1813;
-  --text-muted:  #5f5648;
-  --text-dim:    #9a8e79;
+  /* Bone / cream ink */
+  --text:        #f4edd9;
+  --text-muted:  #aeb4d8;
+  --text-dim:    #6e78ac;
 
-  /* Accent — ink blue-teal (the "ink" in watercolor) */
-  --accent:      #234a5e;
-  --accent-bri:  #2f6175;
-  --accent-deep: #15303d;
-  --accent-glow: rgba(35, 74, 94, 0.30);
+  /* Accent — electric coral */
+  --accent:      #ff6f4d;
+  --accent-bri:  #ff8f72;
+  --accent-deep: #e44e2c;
+  --accent-glow: rgba(255, 111, 77, 0.45);
 
-  /* Secondary wash — warm sienna, used for stats/highlights */
-  --gold:        #b2563a;
+  /* Electric cyan (secondary glints) */
+  --cyan:        #5fe3da;
 
-  /* Watercolor bloom hues (hero wash) */
-  --wash-1:      #2f6175;
-  --wash-2:      #4a8f8c;
-  --wash-3:      #b2563a;
-  --wash-4:      #6a5a9c;
+  /* Stat highlight — warm amber */
+  --gold:        #ffd27a;
+
+  /* Electric wash hues (hero + trail) */
+  --w1: #ff6f4d;
+  --w2: #5fe3da;
+  --w3: #9db0ff;
+  --w4: #ffd27a;
 
   --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
   --ease-soft:   cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -47,6 +50,7 @@
   --color-accent:     var(--accent);
   --color-accent-bri: var(--accent-bri);
   --color-gold:       var(--gold);
+  --color-cyan:       var(--cyan);
   --color-line:       var(--line);
 
   --font-serif: var(--font-eb-garamond);
@@ -105,9 +109,8 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
 }
 
 .eyebrow {
-  font-family: var(--font-sans);
+  font-family: var(--font-mono);
   font-size: 0.72rem;
-  font-weight: 500;
   letter-spacing: 0.26em;
   text-transform: uppercase;
   color: var(--text-dim);
@@ -123,19 +126,18 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   margin-inline: auto;
 }
 
-/* ── Atmosphere: faint watercolor blooms on paper ───────────── */
+/* ── Atmosphere: electric blooms on cobalt ──────────────────── */
 .atmosphere {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(40% 35% at 82% 12%, rgba(74, 143, 140, 0.10), transparent 70%),
-    radial-gradient(38% 34% at 12% 88%, rgba(178, 86, 58, 0.09), transparent 70%),
-    radial-gradient(34% 30% at 50% 50%, rgba(106, 90, 156, 0.05), transparent 70%);
+    radial-gradient(45% 40% at 82% 8%, rgba(255, 111, 77, 0.16), transparent 70%),
+    radial-gradient(42% 38% at 10% 92%, rgba(95, 227, 218, 0.12), transparent 70%),
+    radial-gradient(40% 36% at 50% 50%, rgba(157, 176, 255, 0.08), transparent 70%);
 }
 
-/* paper grain — darker, multiply */
 .grain {
   position: fixed;
   inset: -50%;
@@ -143,8 +145,8 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   height: 200%;
   z-index: 2;
   pointer-events: none;
-  opacity: 0.10;
-  mix-blend-mode: multiply;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
 }
 
 .vignette {
@@ -152,7 +154,7 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  background: radial-gradient(130% 130% at 50% 35%, transparent 60%, rgba(60, 44, 28, 0.10));
+  background: radial-gradient(130% 130% at 50% 35%, transparent 58%, rgba(4, 8, 30, 0.55));
 }
 
 .content { position: relative; z-index: 3; }
@@ -162,10 +164,9 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  font-family: var(--font-sans);
-  font-size: 0.85rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
   padding: 0.85rem 1.5rem;
   border-radius: 999px;
   border: 1px solid var(--text);
@@ -178,14 +179,16 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   background: var(--accent);
   border-color: var(--accent);
   color: var(--bg);
+  box-shadow: 0 10px 34px -10px var(--accent-glow);
 }
-.btn-accent:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+.btn-accent:hover { background: var(--accent-bri); border-color: var(--accent-bri); }
 
-/* ── Glass / paper card ─────────────────────────────────────── */
+/* ── Glass card ─────────────────────────────────────────────── */
 .glass {
-  background: rgba(29, 24, 19, 0.035);
+  background: rgba(243, 236, 216, 0.045);
   border: 1px solid var(--line);
   border-radius: 16px;
+  backdrop-filter: blur(6px);
 }
 
 /* ── Animated underline link ────────────────────────────────── */
@@ -204,6 +207,13 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
 .ul:hover::after { transform: scaleX(1); transform-origin: left; }
 
 .rule { height: 1px; width: 100%; background: var(--line); }
+
+/* ── Kinetic scroll typography ──────────────────────────────── */
+.kinetic {
+  transform: skewY(var(--vskew, 0deg)) scaleY(var(--vstretch, 1));
+  transform-origin: left center;
+  will-change: transform;
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

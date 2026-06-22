@@ -37,7 +37,7 @@ export default function Achievements() {
                 style={{
                   position: 'absolute',
                   inset: 0,
-                  background: 'rgba(35,74,94,0.07)',
+                  background: 'rgba(255,111,77,0.12)',
                   transformOrigin: 'bottom',
                   zIndex: 0,
                 }}
