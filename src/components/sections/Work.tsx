@@ -1,141 +1,235 @@
 'use client'
 
-import { useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
+import gsap from 'gsap'
 import { EASE } from '@/lib/motion'
 import Reveal from '@/components/ui/Reveal'
 import SectionHeader from '@/components/ui/SectionHeader'
 import { site, type Project } from '@/lib/data/site'
 
-function ProjectRow({ project, index }: { project: Project; index: number }) {
-  const [open, setOpen] = useState(false)
+const HIDDEN = 'polygon(0 100%, 100% 100%, 100% 100%, 0 100%)'
+const SHOWN = 'polygon(0 0, 100% 0, 100% 100%, 0 100%)'
+
+export default function Work() {
+  const [active, setActive] = useState<number | null>(null)
+  const previewRef = useRef<HTMLDivElement>(null)
+  const moveX = useRef<((v: number) => void) | null>(null)
+  const moveY = useRef<((v: number) => void) | null>(null)
+
+  useEffect(() => {
+    if (!previewRef.current) return
+    moveX.current = gsap.quickTo(previewRef.current, 'x', { duration: 1.1, ease: 'power3.out' })
+    moveY.current = gsap.quickTo(previewRef.current, 'y', { duration: 1.4, ease: 'power3.out' })
+  }, [])
+
+  const onMove = (e: React.MouseEvent) => {
+    if (window.innerWidth < 768) return
+    moveX.current?.(e.clientX + 28)
+    moveY.current?.(e.clientY - 60)
+  }
+
+  const enter = (i: number) => {
+    if (window.innerWidth < 768) return
+    setActive(i)
+    gsap.to(previewRef.current, { opacity: 1, scale: 1, duration: 0.35, ease: 'power2.out' })
+  }
+  const leave = () => {
+    if (window.innerWidth < 768) return
+    setActive(null)
+    gsap.to(previewRef.current, { opacity: 0, scale: 0.92, duration: 0.3, ease: 'power2.out' })
+  }
 
   return (
-    <Reveal>
+    <section id="work" className="section" onMouseMove={onMove}>
+      <SectionHeader index="02" label="Selected work" />
+
+      <div style={{ borderTop: '1px solid var(--line)' }}>
+        {site.projects.map((project, i) => (
+          <ProjectRow
+            key={project.title}
+            project={project}
+            index={i}
+            active={active === i}
+            onEnter={() => enter(i)}
+            onLeave={leave}
+          />
+        ))}
+      </div>
+
+      {/* cursor-following floating preview (desktop) */}
       <div
-        data-hover
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
-        onClick={() => setOpen((v) => !v)}
+        ref={previewRef}
+        aria-hidden
         style={{
-          borderTop: '1px solid var(--line)',
-          padding: 'clamp(1.4rem, 3vw, 2.1rem) 0',
-          position: 'relative',
-          transition: 'background 0.4s var(--ease-out)',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: 440,
+          height: 300,
+          zIndex: 60,
+          pointerEvents: 'none',
+          opacity: 0,
+          borderRadius: 16,
+          overflow: 'hidden',
+          border: '1px solid var(--accent)',
+          boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7)',
+          willChange: 'transform',
         }}
       >
-        {/* top line */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            gap: '1.2rem',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '1.2rem', minWidth: 0 }}>
-            <span className="font-mono" style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>
-              0{index + 1}
+        {active !== null && <PreviewCard project={site.projects[active]} index={active} />}
+      </div>
+    </section>
+  )
+}
+
+function ProjectRow({
+  project,
+  index,
+  active,
+  onEnter,
+  onLeave,
+}: {
+  project: Project
+  index: number
+  active: boolean
+  onEnter: () => void
+  onLeave: () => void
+}) {
+  const href = project.live || project.repo || '#'
+  return (
+    <Reveal>
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        data-hover
+        onMouseEnter={onEnter}
+        onMouseLeave={onLeave}
+        style={{
+          display: 'block',
+          position: 'relative',
+          borderBottom: '1px solid var(--line)',
+          padding: 'clamp(1.3rem, 3vw, 2rem) clamp(0.5rem, 2vw, 1.5rem)',
+          overflow: 'hidden',
+        }}
+      >
+        {/* wipe overlay */}
+        <motion.div
+          aria-hidden
+          initial={false}
+          animate={{ clipPath: active ? SHOWN : HIDDEN }}
+          transition={{ duration: 0.4, ease: EASE }}
+          style={{ position: 'absolute', inset: 0, background: 'var(--accent)', zIndex: 0 }}
+        />
+
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              gap: '1rem',
+              flexWrap: 'wrap',
+              transition: 'color 0.4s, padding-left 0.4s',
+              color: active ? '#1a1510' : 'var(--text)',
+              paddingLeft: active ? '0.8rem' : 0,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '1.1rem' }}>
+              <span className="font-mono" style={{ fontSize: '0.78rem', opacity: 0.6 }}>
+                0{index + 1}
+              </span>
+              <h3
+                className="font-serif"
+                style={{
+                  fontSize: 'clamp(1.7rem, 4.5vw, 3rem)',
+                  fontWeight: 500,
+                  letterSpacing: '-0.015em',
+                  lineHeight: 1.04,
+                }}
+              >
+                {project.title}
+              </h3>
+            </div>
+            <span style={{ fontSize: '1.1rem' }} aria-hidden>
+              ↗
             </span>
-            <motion.h3
-              className="font-serif"
-              animate={{ color: open ? 'var(--accent-bri)' : 'var(--text)' }}
-              transition={{ duration: 0.4 }}
-              style={{
-                fontSize: 'clamp(1.6rem, 4vw, 2.8rem)',
-                fontWeight: 500,
-                letterSpacing: '-0.015em',
-                lineHeight: 1.05,
-              }}
-            >
-              {project.title}
-            </motion.h3>
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '1.4rem' }}>
-            <span className="font-mono" style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-              {project.meta}
-            </span>
-            <span className="font-mono" style={{ fontSize: '0.74rem', color: 'var(--text-dim)' }}>
-              {project.year}
-            </span>
-            <motion.span
-              aria-hidden
-              animate={{ rotate: open ? 90 : 0, color: open ? 'var(--accent-bri)' : 'var(--text-dim)' }}
-              transition={{ duration: 0.4 }}
-              style={{ display: 'inline-block', fontSize: '0.9rem' }}
-            >
-              →
-            </motion.span>
+
+          <div
+            style={{
+              display: 'flex',
+              gap: '1.2rem',
+              flexWrap: 'wrap',
+              marginTop: '0.7rem',
+              paddingLeft: active ? '0.8rem' : 0,
+              transition: 'color 0.4s, padding-left 0.4s',
+              color: active ? 'rgba(26,21,16,0.7)' : 'var(--text-dim)',
+            }}
+            className="font-mono"
+          >
+            <span style={{ fontSize: '0.72rem' }}>{project.meta}</span>
+            <span style={{ fontSize: '0.72rem' }}>· {project.year}</span>
           </div>
         </div>
-
-        {/* expanding detail */}
-        <AnimatePresence initial={false}>
-          {open && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.5, ease: EASE }}
-              style={{ overflow: 'hidden' }}
-            >
-              <div style={{ paddingTop: '1.3rem', display: 'flex', flexWrap: 'wrap', gap: '1.5rem 3rem' }}>
-                <p
-                  style={{
-                    color: 'var(--text-muted)',
-                    lineHeight: 1.7,
-                    maxWidth: '62ch',
-                    fontSize: '0.98rem',
-                    flex: '1 1 380px',
-                  }}
-                >
-                  {project.summary}
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                  {project.live && (
-                    <a
-                      className="font-mono"
-                      href={project.live}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ fontSize: '0.8rem', color: 'var(--accent-bri)' }}
-                    >
-                      ↗ Live site
-                    </a>
-                  )}
-                  {project.repo && (
-                    <a
-                      className="font-mono"
-                      href={project.repo}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}
-                    >
-                      ↗ Source
-                    </a>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      </a>
     </Reveal>
   )
 }
 
-export default function Work() {
+const TINTS = [
+  ['rgba(224,184,106,0.22)', 'rgba(199,120,60,0.10)'],
+  ['rgba(199,154,74,0.22)', 'rgba(120,108,90,0.10)'],
+  ['rgba(241,210,146,0.20)', 'rgba(90,80,60,0.10)'],
+  ['rgba(224,184,106,0.16)', 'rgba(160,120,70,0.12)'],
+]
+
+function PreviewCard({ project, index }: { project: Project; index: number }) {
+  const [c1, c2] = TINTS[index % TINTS.length]
   return (
-    <section id="work" className="section">
-      <SectionHeader index="02" label="Selected work" />
-      <div style={{ borderBottom: '1px solid var(--line)' }}>
-        {site.projects.map((project, i) => (
-          <ProjectRow key={project.title} project={project} index={i} />
-        ))}
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        background: `linear-gradient(135deg, ${c1}, ${c2}), var(--panel)`,
+        padding: '1.5rem',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+      }}
+    >
+      <span
+        className="font-serif"
+        aria-hidden
+        style={{
+          position: 'absolute',
+          right: '0.6rem',
+          top: '-1.4rem',
+          fontSize: '9rem',
+          fontWeight: 500,
+          color: 'rgba(244,237,224,0.06)',
+          lineHeight: 1,
+        }}
+      >
+        0{index + 1}
+      </span>
+      <div className="eyebrow">{project.meta}</div>
+      <div>
+        <div
+          className="font-serif"
+          style={{ fontSize: '2.2rem', fontWeight: 500, lineHeight: 1.05, letterSpacing: '-0.02em' }}
+        >
+          {project.title}
+        </div>
+        <div
+          className="font-mono"
+          style={{ marginTop: '0.7rem', fontSize: '0.72rem', color: 'var(--accent-bri)' }}
+        >
+          {project.live ? 'View live ↗' : 'View source ↗'}
+        </div>
       </div>
-    </section>
+    </div>
   )
 }

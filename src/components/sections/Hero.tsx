@@ -1,10 +1,12 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import dynamic from 'next/dynamic'
 import { EASE } from '@/lib/motion'
-import Aura from '@/components/canvas/Aura'
 import Magnetic from '@/components/ui/Magnetic'
 import { site } from '@/lib/data/site'
+
+const HeroScene = dynamic(() => import('@/components/canvas/HeroScene'), { ssr: false })
 
 const fade = {
   hidden: { opacity: 0, y: 18 },
@@ -34,7 +36,7 @@ export default function Hero() {
         paddingInline: 'clamp(1.25rem, 5vw, 6rem)',
       }}
     >
-      <Aura />
+      <HeroScene />
 
       <div style={{ position: 'relative', maxWidth: 1320, margin: '0 auto', width: '100%' }}>
         {/* greeting */}

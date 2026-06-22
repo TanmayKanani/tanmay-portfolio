@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { EB_Garamond, IBM_Plex_Mono, Geist } from 'next/font/google'
 import './globals.css'
 import LenisProvider from '@/components/providers/LenisProvider'
+import Loader from '@/components/ui/Loader'
 import Cursor from '@/components/ui/Cursor'
 import Grain from '@/components/ui/Grain'
 import ScrollProgress from '@/components/ui/ScrollProgress'
@@ -48,6 +49,7 @@ export default function RootLayout({
       className={`${ebGaramond.variable} ${ibmPlexMono.variable} ${geist.variable}`}
     >
       <body>
+        <Loader />
         <div className="atmosphere" aria-hidden="true" />
         <Grain />
         <div className="vignette" aria-hidden="true" />
