@@ -63,9 +63,28 @@ export default function Nav() {
             justifyContent: 'space-between',
           }}
         >
-          <a href="#top" data-hover className="font-serif" style={{ fontSize: '1.3rem', fontWeight: 500, letterSpacing: '-0.01em' }}>
-            {site.initials}
-            <span style={{ color: 'var(--accent-bri)' }}>.</span>
+          <a
+            href="#top"
+            data-hover
+            style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}
+          >
+            <motion.span
+              aria-hidden
+              animate={{ opacity: [1, 0.35, 1] }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+              style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)' }}
+            />
+            <span
+              style={{
+                fontSize: '0.72rem',
+                fontWeight: 500,
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                color: 'var(--text-muted)',
+              }}
+            >
+              Open to work
+            </span>
           </a>
 
           {/* desktop links */}

@@ -87,6 +87,7 @@ export default function Heatmap({ cells, max }: { cells: HeatCell[]; max: number
                     key={cell.date}
                     initial={{ opacity: 0, scale: 0.4 }}
                     whileInView={{ opacity: 1, scale: 1 }}
+                    whileHover={{ scale: 1.7, backgroundColor: 'var(--accent)' }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.4, delay: Math.min(col * 0.012, 0.6) }}
                     title={`${cell.count} on ${cell.date}`}
@@ -96,6 +97,7 @@ export default function Heatmap({ cells, max }: { cells: HeatCell[]; max: number
                       borderRadius: 3,
                       background: COLORS[lv],
                       boxShadow: lv >= 4 ? '0 0 8px rgba(35,74,94,0.5)' : 'none',
+                      cursor: 'pointer',
                     }}
                   />
                 )

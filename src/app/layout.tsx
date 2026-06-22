@@ -3,6 +3,7 @@ import { EB_Garamond, IBM_Plex_Mono, Geist } from 'next/font/google'
 import './globals.css'
 import LenisProvider from '@/components/providers/LenisProvider'
 import Loader from '@/components/ui/Loader'
+import InkTrail from '@/components/canvas/InkTrail'
 import Cursor from '@/components/ui/Cursor'
 import Grain from '@/components/ui/Grain'
 import ScrollProgress from '@/components/ui/ScrollProgress'
@@ -29,6 +30,7 @@ const geist = Geist({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://tanmay-portfolio.vercel.app'),
   title: `${site.name} — ${site.role}`,
   description: site.intro,
   openGraph: {
@@ -51,6 +53,7 @@ export default function RootLayout({
       <body>
         <Loader />
         <div className="atmosphere" aria-hidden="true" />
+        <InkTrail />
         <Grain />
         <div className="vignette" aria-hidden="true" />
         <Cursor />

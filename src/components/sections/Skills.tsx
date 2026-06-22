@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { RevealGroup, RevealItem } from '@/components/ui/Reveal'
 import SectionHeader from '@/components/ui/SectionHeader'
+import ScrambleText from '@/components/ui/ScrambleText'
 import { site } from '@/lib/data/site'
 
 export default function Skills() {
@@ -20,7 +21,7 @@ export default function Skills() {
       >
         {site.skills.map((group) => (
           <RevealItem key={group.group}>
-            <h3 className="eyebrow" style={{ marginBottom: '1.2rem', color: 'var(--accent-bri)' }}>
+            <h3 className="eyebrow" style={{ marginBottom: '1.2rem', color: 'var(--accent)' }}>
               {group.group}
             </h3>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
@@ -40,9 +41,9 @@ export default function Skills() {
                 >
                   <span
                     aria-hidden
-                    style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--text-dim)' }}
+                    style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--accent)' }}
                   />
-                  {item}
+                  <ScrambleText text={item} className="font-mono" />
                 </motion.li>
               ))}
             </ul>
