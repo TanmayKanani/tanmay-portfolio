@@ -6,13 +6,16 @@ motion throughout.
 
 ## Design
 
-- **Aesthetic** — deep neutral near-black, off-white type, a single electric indigo
-  accent with sparing warm-amber highlights for stats.
-- **Type** — EB Garamond (serif display), Geist (sans body), IBM Plex Mono (labels).
-- **Signature interaction** — an interactive constellation/graph canvas in the hero
-  (`src/components/canvas/Constellation.tsx`) that lights up and warps toward the cursor.
-- **Motion** — Lenis smooth scroll, Framer Motion reveals & stagger, animated stat
-  counters, magnetic buttons, a custom two-part cursor, and a scroll-progress bar.
+- **Aesthetic** — watercolour on paper: warm ivory, ink-black type, an ink blue-teal
+  accent with a sienna highlight for stats. David-Whyte-inspired but its own thing.
+- **Type** — EB Garamond (serif display), Geist (sans body/labels).
+- **Signature interaction** — a **scratch-to-reveal hero**: a paper layer you erase
+  with the cursor (`ScratchReveal`) to uncover a living **watercolour wash**
+  (`WatercolorWash`) and the name beneath. Auto-reveals on touch / reduced-motion.
+- **Motion everywhere** — Lenis smooth scroll, Framer Motion reveals & stagger,
+  a cursor-following project preview (GSAP) in Work, scroll-scrub parallax words,
+  a velocity-reactive marquee, animated stat counters, an animated submission heatmap,
+  magnetic buttons, a custom sticky cursor, an intro loader, and a scroll-progress bar.
   Everything respects `prefers-reduced-motion`.
 
 ## Editing content

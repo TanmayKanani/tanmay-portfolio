@@ -1,12 +1,11 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import dynamic from 'next/dynamic'
 import { EASE } from '@/lib/motion'
+import WatercolorWash from '@/components/canvas/WatercolorWash'
+import ScratchReveal from '@/components/canvas/ScratchReveal'
 import Magnetic from '@/components/ui/Magnetic'
 import { site } from '@/lib/data/site'
-
-const HeroScene = dynamic(() => import('@/components/canvas/HeroScene'), { ssr: false })
 
 const fade = {
   hidden: { opacity: 0, y: 18 },
@@ -16,9 +15,6 @@ const fade = {
     transition: { duration: 0.9, ease: EASE, delay },
   }),
 }
-
-// split the name into letters for a refined stagger reveal
-const letters = (text: string) => Array.from(text)
 
 export default function Hero() {
   const name = site.name
@@ -36,35 +32,26 @@ export default function Hero() {
         paddingInline: 'clamp(1.25rem, 5vw, 6rem)',
       }}
     >
-      <HeroScene />
+      {/* revealed beneath the scratch layer */}
+      <WatercolorWash />
 
-      <div style={{ position: 'relative', maxWidth: 1320, margin: '0 auto', width: '100%' }}>
-        {/* greeting */}
+      <div style={{ position: 'relative', zIndex: 2, maxWidth: 1320, margin: '0 auto', width: '100%' }}>
         <motion.div
-          custom={0.15}
+          custom={0.1}
           initial="hidden"
           animate="show"
           variants={fade}
           style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', marginBottom: '1.6rem' }}
         >
-          <span
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: 'var(--accent-bri)',
-              boxShadow: '0 0 16px var(--accent-glow)',
-            }}
-          />
+          <span className="rule" style={{ width: 40, flex: '0 0 40px' }} />
           <span className="eyebrow">{site.greeting}</span>
         </motion.div>
 
-        {/* name — the hero */}
         <h1
           className="font-serif"
           style={{
             fontSize: 'clamp(3.2rem, 13vw, 11rem)',
-            lineHeight: 0.95,
+            lineHeight: 0.94,
             fontWeight: 500,
             letterSpacing: '-0.03em',
             margin: 0,
@@ -72,53 +59,39 @@ export default function Hero() {
         >
           {name.split(' ').map((word, wi) => (
             <span key={wi} style={{ display: 'block', overflow: 'hidden' }}>
-              <span style={{ display: 'inline-block' }}>
-                {letters(word).map((ch, ci) => (
-                  <motion.span
-                    key={ci}
-                    initial={{ y: '110%' }}
-                    animate={{ y: '0%' }}
-                    transition={{
-                      duration: 1,
-                      ease: EASE,
-                      delay: 0.35 + wi * 0.18 + ci * 0.035,
-                    }}
-                    style={{ display: 'inline-block' }}
-                  >
-                    {ch}
-                  </motion.span>
-                ))}
-              </span>
+              <motion.span
+                initial={{ y: '110%' }}
+                animate={{ y: '0%' }}
+                transition={{ duration: 1, ease: EASE, delay: 0.3 + wi * 0.14 }}
+                style={{ display: 'inline-block' }}
+              >
+                {word}
+              </motion.span>
             </span>
           ))}
         </h1>
 
-        {/* role */}
         <motion.div
-          custom={1.05}
+          custom={0.9}
           initial="hidden"
           animate="show"
           variants={fade}
           style={{ marginTop: '1.8rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}
         >
           <span className="rule" style={{ width: 48, flex: '0 0 48px' }} />
-          <span
-            className="font-mono"
-            style={{ fontSize: '0.9rem', letterSpacing: '0.06em', color: 'var(--text)' }}
-          >
+          <span style={{ fontSize: '1rem', letterSpacing: '0.04em', color: 'var(--text)' }}>
             {site.role}
           </span>
         </motion.div>
 
-        {/* intro */}
         <motion.p
-          custom={1.2}
+          custom={1.05}
           initial="hidden"
           animate="show"
           variants={fade}
           style={{
             marginTop: '1.8rem',
-            maxWidth: '46ch',
+            maxWidth: '44ch',
             fontSize: 'clamp(1rem, 1.4vw, 1.18rem)',
             color: 'var(--text-muted)',
             lineHeight: 1.7,
@@ -127,13 +100,12 @@ export default function Hero() {
           {site.intro}
         </motion.p>
 
-        {/* CTAs */}
         <motion.div
-          custom={1.35}
+          custom={1.2}
           initial="hidden"
           animate="show"
           variants={fade}
-          style={{ marginTop: '2.6rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}
+          style={{ marginTop: '2.4rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}
         >
           <Magnetic strength={0.4}>
             <a className="btn btn-accent" href="#work">
@@ -149,14 +121,11 @@ export default function Hero() {
         </motion.div>
       </div>
 
-      {/* scroll cue */}
-      <motion.div
-        custom={1.6}
-        initial="hidden"
-        animate="show"
-        variants={fade}
+      {/* location + scroll cue */}
+      <div
         style={{
           position: 'absolute',
+          zIndex: 2,
           bottom: 'clamp(1.5rem, 4vh, 2.5rem)',
           left: 0,
           right: 0,
@@ -166,9 +135,7 @@ export default function Hero() {
           alignItems: 'flex-end',
         }}
       >
-        <span className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
-          {site.location}
-        </span>
+        <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>{site.location}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
           <span className="eyebrow">Scroll</span>
           <motion.span
@@ -180,7 +147,10 @@ export default function Hero() {
             ↓
           </motion.span>
         </div>
-      </motion.div>
+      </div>
+
+      {/* the scratch-to-reveal layer (on top) */}
+      <ScratchReveal />
     </section>
   )
 }

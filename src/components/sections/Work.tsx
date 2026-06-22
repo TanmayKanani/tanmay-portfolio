@@ -73,7 +73,7 @@ export default function Work() {
           borderRadius: 16,
           overflow: 'hidden',
           border: '1px solid var(--accent)',
-          boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7)',
+          boxShadow: '0 30px 70px -24px rgba(29,24,19,0.45)',
           willChange: 'transform',
         }}
       >
@@ -132,7 +132,7 @@ function ProjectRow({
               gap: '1rem',
               flexWrap: 'wrap',
               transition: 'color 0.4s, padding-left 0.4s',
-              color: active ? '#1a1510' : 'var(--text)',
+              color: active ? 'var(--bg)' : 'var(--text)',
               paddingLeft: active ? '0.8rem' : 0,
             }}
           >
@@ -165,7 +165,7 @@ function ProjectRow({
               marginTop: '0.7rem',
               paddingLeft: active ? '0.8rem' : 0,
               transition: 'color 0.4s, padding-left 0.4s',
-              color: active ? 'rgba(26,21,16,0.7)' : 'var(--text-dim)',
+              color: active ? 'rgba(243,235,221,0.78)' : 'var(--text-dim)',
             }}
             className="font-mono"
           >
@@ -179,10 +179,10 @@ function ProjectRow({
 }
 
 const TINTS = [
-  ['rgba(224,184,106,0.22)', 'rgba(199,120,60,0.10)'],
-  ['rgba(199,154,74,0.22)', 'rgba(120,108,90,0.10)'],
-  ['rgba(241,210,146,0.20)', 'rgba(90,80,60,0.10)'],
-  ['rgba(224,184,106,0.16)', 'rgba(160,120,70,0.12)'],
+  ['rgba(47,97,117,0.6)', 'rgba(29,24,19,0.15)'],
+  ['rgba(74,143,140,0.55)', 'rgba(29,24,19,0.15)'],
+  ['rgba(178,86,58,0.55)', 'rgba(29,24,19,0.15)'],
+  ['rgba(106,90,156,0.55)', 'rgba(29,24,19,0.15)'],
 ]
 
 function PreviewCard({ project, index }: { project: Project; index: number }) {
@@ -193,7 +193,8 @@ function PreviewCard({ project, index }: { project: Project; index: number }) {
         position: 'relative',
         width: '100%',
         height: '100%',
-        background: `linear-gradient(135deg, ${c1}, ${c2}), var(--panel)`,
+        background: `linear-gradient(135deg, ${c1}, ${c2}), #1d1813`,
+        color: 'var(--bg)',
         padding: '1.5rem',
         display: 'flex',
         flexDirection: 'column',
@@ -209,13 +210,15 @@ function PreviewCard({ project, index }: { project: Project; index: number }) {
           top: '-1.4rem',
           fontSize: '9rem',
           fontWeight: 500,
-          color: 'rgba(244,237,224,0.06)',
+          color: 'rgba(243,235,221,0.10)',
           lineHeight: 1,
         }}
       >
         0{index + 1}
       </span>
-      <div className="eyebrow">{project.meta}</div>
+      <div className="eyebrow" style={{ color: 'rgba(243,235,221,0.65)' }}>
+        {project.meta}
+      </div>
       <div>
         <div
           className="font-serif"
@@ -224,8 +227,7 @@ function PreviewCard({ project, index }: { project: Project; index: number }) {
           {project.title}
         </div>
         <div
-          className="font-mono"
-          style={{ marginTop: '0.7rem', fontSize: '0.72rem', color: 'var(--accent-bri)' }}
+          style={{ marginTop: '0.7rem', fontSize: '0.78rem', color: 'rgba(243,235,221,0.9)', letterSpacing: '0.02em' }}
         >
           {project.live ? 'View live ↗' : 'View source ↗'}
         </div>

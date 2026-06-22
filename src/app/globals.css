@@ -1,32 +1,37 @@
 @import "tailwindcss";
 
 /* ───────────────────────────────────────────────────────────
-   Soft-luxe warm-dark theme — charcoal + champagne gold
+   Watercolor · paper + ink theme
    ─────────────────────────────────────────────────────────── */
 :root {
-  /* Surfaces — warm near-black */
-  --bg:          #100d0a;
-  --bg-soft:     #16120d;
-  --panel:       #1a1510;
-  --panel-hi:    #221b14;
-  --line:        rgba(243, 236, 224, 0.09);
-  --line-soft:   rgba(243, 236, 224, 0.05);
+  /* Paper surfaces */
+  --bg:          #f3ebdd;
+  --bg-soft:     #ece1cf;
+  --panel:       #ece1cf;
+  --panel-hi:    #e4d8c2;
+  --line:        rgba(29, 24, 19, 0.16);
+  --line-soft:   rgba(29, 24, 19, 0.08);
 
-  /* Ink — warm cream */
-  --text:        #f4ede0;
-  --text-muted:  #b3a690;
-  --text-dim:    #786c5a;
+  /* Ink */
+  --text:        #1d1813;
+  --text-muted:  #5f5648;
+  --text-dim:    #9a8e79;
 
-  /* Accent — champagne gold */
-  --accent:      #e0b86a;
-  --accent-bri:  #f1d292;
-  --accent-deep: #c79a4a;
-  --accent-glow: rgba(224, 184, 106, 0.40);
+  /* Accent — ink blue-teal (the "ink" in watercolor) */
+  --accent:      #234a5e;
+  --accent-bri:  #2f6175;
+  --accent-deep: #15303d;
+  --accent-glow: rgba(35, 74, 94, 0.30);
 
-  /* Stat highlight (same warm family) */
-  --gold:        #f1d292;
+  /* Secondary wash — warm sienna, used for stats/highlights */
+  --gold:        #b2563a;
 
-  /* Motion */
+  /* Watercolor bloom hues (hero wash) */
+  --wash-1:      #2f6175;
+  --wash-2:      #4a8f8c;
+  --wash-3:      #b2563a;
+  --wash-4:      #6a5a9c;
+
   --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
   --ease-soft:   cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
@@ -58,7 +63,7 @@
 }
 
 html {
-  scroll-behavior: auto; /* Lenis owns scrolling */
+  scroll-behavior: auto;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -82,7 +87,7 @@ body {
 
 ::selection {
   background: var(--accent);
-  color: #1a1510;
+  color: var(--bg);
 }
 
 a { color: inherit; text-decoration: none; }
@@ -96,18 +101,19 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   font-family: var(--font-serif);
   font-style: italic;
   font-weight: 500;
-  color: var(--accent-bri);
+  color: var(--accent);
 }
 
 .eyebrow {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 0.72rem;
-  letter-spacing: 0.28em;
+  font-weight: 500;
+  letter-spacing: 0.26em;
   text-transform: uppercase;
   color: var(--text-dim);
 }
 
-/* ── Reusable section frame ─────────────────────────────────── */
+/* ── Section frame ──────────────────────────────────────────── */
 .section {
   position: relative;
   width: 100%;
@@ -117,18 +123,19 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   margin-inline: auto;
 }
 
-/* ── Background atmosphere ──────────────────────────────────── */
+/* ── Atmosphere: faint watercolor blooms on paper ───────────── */
 .atmosphere {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(60% 50% at 50% -8%, rgba(224, 184, 106, 0.14), transparent 70%),
-    radial-gradient(45% 45% at 85% 15%, rgba(224, 184, 106, 0.07), transparent 70%),
-    radial-gradient(55% 55% at 12% 95%, rgba(199, 120, 60, 0.06), transparent 70%);
+    radial-gradient(40% 35% at 82% 12%, rgba(74, 143, 140, 0.10), transparent 70%),
+    radial-gradient(38% 34% at 12% 88%, rgba(178, 86, 58, 0.09), transparent 70%),
+    radial-gradient(34% 30% at 50% 50%, rgba(106, 90, 156, 0.05), transparent 70%);
 }
 
+/* paper grain — darker, multiply */
 .grain {
   position: fixed;
   inset: -50%;
@@ -136,8 +143,8 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   height: 200%;
   z-index: 2;
   pointer-events: none;
-  opacity: 0.045;
-  mix-blend-mode: overlay;
+  opacity: 0.10;
+  mix-blend-mode: multiply;
 }
 
 .vignette {
@@ -145,72 +152,59 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  background: radial-gradient(130% 130% at 50% 35%, transparent 55%, rgba(0, 0, 0, 0.55));
+  background: radial-gradient(130% 130% at 50% 35%, transparent 60%, rgba(60, 44, 28, 0.10));
 }
 
-/* Content sits above atmosphere */
 .content { position: relative; z-index: 3; }
 
-/* ── Buttons / links ────────────────────────────────────────── */
+/* ── Buttons ────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-  letter-spacing: 0.04em;
-  padding: 0.85rem 1.4rem;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--panel);
-  transition: border-color 0.4s var(--ease-out), background 0.4s var(--ease-out),
-    color 0.4s var(--ease-out), transform 0.4s var(--ease-out);
-}
-.btn:hover {
-  border-color: var(--accent);
-  background: var(--panel-hi);
-}
-.btn-accent {
-  background: linear-gradient(180deg, var(--accent-bri), var(--accent-deep));
-  border-color: transparent;
-  color: #1a1510;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
   font-weight: 500;
-  box-shadow: 0 10px 34px -10px var(--accent-glow);
+  letter-spacing: 0.02em;
+  padding: 0.85rem 1.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--text);
+  background: transparent;
+  transition: color 0.4s var(--ease-out), background 0.4s var(--ease-out),
+    border-color 0.4s var(--ease-out);
 }
-.btn-accent:hover { background: linear-gradient(180deg, var(--accent-bri), var(--accent)); }
+.btn:hover { background: var(--text); color: var(--bg); }
+.btn-accent {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+.btn-accent:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
 
-/* ── Hairlines ──────────────────────────────────────────────── */
-.rule { height: 1px; width: 100%; background: var(--line); }
-
-/* ── Glass card ─────────────────────────────────────────────── */
+/* ── Glass / paper card ─────────────────────────────────────── */
 .glass {
-  background: linear-gradient(160deg, rgba(243, 236, 224, 0.045), rgba(243, 236, 224, 0.015));
+  background: rgba(29, 24, 19, 0.035);
   border: 1px solid var(--line);
-  border-radius: 18px;
-  backdrop-filter: blur(8px);
+  border-radius: 16px;
 }
 
 /* ── Animated underline link ────────────────────────────────── */
-.ul {
-  position: relative;
-  transition: color 0.35s var(--ease-out);
-}
+.ul { position: relative; transition: color 0.35s var(--ease-out); }
 .ul::after {
   content: '';
   position: absolute;
-  left: 0;
-  bottom: -3px;
-  width: 100%;
-  height: 1px;
+  left: 0; bottom: -3px;
+  width: 100%; height: 1px;
   background: var(--accent);
   transform: scaleX(0);
   transform-origin: right;
   transition: transform 0.45s var(--ease-out);
 }
-.ul:hover { color: var(--text); }
+.ul:hover { color: var(--accent); }
 .ul:hover::after { transform: scaleX(1); transform-origin: left; }
 
-/* Accessibility: respect reduced motion */
+.rule { height: 1px; width: 100%; background: var(--line); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
