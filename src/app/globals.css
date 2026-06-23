@@ -139,6 +139,8 @@ button { font-family: inherit; background: none; border: none; color: inherit; c
   transition: transform 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out), border-color 0.3s var(--ease-out);
 }
 .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--text-dim); }
+.go-arrow { display: inline-block; transition: transform 0.3s var(--ease-out); }
+.card:hover .go-arrow { transform: translate(3px, -3px); }
 
 /* ── Animated underline link ────────────────────────────────── */
 .ul { position: relative; transition: color 0.3s var(--ease-out); }
@@ -157,9 +159,34 @@ button { font-family: inherit; background: none; border: none; color: inherit; c
 
 .rule { height: 1px; width: 100%; background: var(--line); }
 
+/* ── Hero animated backdrop blobs ───────────────────────────── */
+@keyframes blobA {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(8%, -6%) scale(1.12); }
+  66%      { transform: translate(-6%, 6%) scale(0.94); }
+}
+@keyframes blobB {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-10%, 8%) scale(1.15); }
+}
+@keyframes blobC {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40%      { transform: translate(7%, 9%) scale(1.08); }
+  75%      { transform: translate(-8%, -5%) scale(0.96); }
+}
+
+/* ── Pulsing status dot ─────────────────────────────────────── */
+.dot-pulse { animation: dotPulse 2.4s ease-out infinite; }
+@keyframes dotPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(31, 191, 117, 0.45); }
+  70%  { box-shadow: 0 0 0 7px rgba(31, 191, 117, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(31, 191, 117, 0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
 }

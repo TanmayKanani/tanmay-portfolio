@@ -1,6 +1,7 @@
 'use client'
 
 import Reveal from '@/components/ui/Reveal'
+import Magnetic from '@/components/ui/Magnetic'
 import { site } from '@/lib/data/site'
 import { parseAccent } from '@/lib/text'
 
@@ -48,13 +49,17 @@ export default function Contact() {
 
       <Reveal delay={0.1}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.9rem', alignItems: 'center' }}>
-          <a className="btn btn-accent" href={`mailto:${site.email}`}>
-            {site.email}
-          </a>
-          {site.resumeUrl && site.resumeUrl !== '#' && (
-            <a className="btn" href={site.resumeUrl} target="_blank" rel="noreferrer">
-              Résumé ↗
+          <Magnetic strength={0.3}>
+            <a className="btn btn-accent" href={`mailto:${site.email}`}>
+              {site.email}
             </a>
+          </Magnetic>
+          {site.resumeUrl && site.resumeUrl !== '#' && (
+            <Magnetic strength={0.3}>
+              <a className="btn" href={site.resumeUrl} target="_blank" rel="noreferrer">
+                Résumé ↗
+              </a>
+            </Magnetic>
           )}
         </div>
       </Reveal>

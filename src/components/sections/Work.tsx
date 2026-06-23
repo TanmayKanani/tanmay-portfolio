@@ -49,7 +49,7 @@ function ProjectCard({ project }: { project: Project }) {
             {project.meta}
           </span>
           <span style={{ fontSize: '0.85rem', color: 'var(--accent)', fontWeight: 500 }}>
-            {project.live ? 'Live ↗' : 'Source ↗'}
+            {project.live ? 'Live' : 'Source'} <span className="go-arrow">↗</span>
           </span>
         </div>
       </a>

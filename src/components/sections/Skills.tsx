@@ -1,5 +1,6 @@
 'use client'
 
+import { motion } from 'framer-motion'
 import { RevealGroup, RevealItem } from '@/components/ui/Reveal'
 import SectionHeader from '@/components/ui/SectionHeader'
 import { site } from '@/lib/data/site'
@@ -24,8 +25,10 @@ export default function Skills() {
             </h3>
             <ul style={{ listStyle: 'none', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
               {group.items.map((item) => (
-                <li
+                <motion.li
                   key={item}
+                  whileHover={{ y: -3, borderColor: 'var(--accent)', color: 'var(--accent)' }}
+                  transition={{ duration: 0.2 }}
                   style={{
                     fontSize: '0.9rem',
                     color: 'var(--text)',
@@ -33,10 +36,12 @@ export default function Skills() {
                     borderRadius: 8,
                     padding: '0.4rem 0.8rem',
                     background: 'var(--panel)',
+                    boxShadow: 'var(--shadow-sm)',
+                    cursor: 'default',
                   }}
                 >
                   {item}
-                </li>
+                </motion.li>
               ))}
             </ul>
           </RevealItem>

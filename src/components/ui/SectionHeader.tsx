@@ -1,6 +1,7 @@
 'use client'
 
-import Reveal from '@/components/ui/Reveal'
+import { motion } from 'framer-motion'
+import { EASE } from '@/lib/motion'
 
 interface SectionHeaderProps {
   index: string
@@ -8,10 +9,15 @@ interface SectionHeaderProps {
   title?: string
 }
 
-/** Consistent eyebrow + index row that opens each section. */
+/** Eyebrow + index row (with an animated divider) that opens each section. */
 export default function SectionHeader({ index, label, title }: SectionHeaderProps) {
   return (
-    <Reveal>
+    <motion.div
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: '-12% 0px' }}
+      variants={{ show: { transition: { staggerChildren: 0.08 } } }}
+    >
       <div
         style={{
           display: 'flex',
@@ -20,13 +26,31 @@ export default function SectionHeader({ index, label, title }: SectionHeaderProp
           marginBottom: title ? '1.6rem' : '3rem',
         }}
       >
-        <span className="eyebrow">{index}</span>
-        <span className="rule" style={{ flex: 1, maxWidth: 64 }} />
-        <span className="eyebrow">{label}</span>
+        <motion.span
+          className="eyebrow"
+          variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { duration: 0.5 } } }}
+        >
+          {index}
+        </motion.span>
+        <motion.span
+          className="rule"
+          style={{ flex: 1, maxWidth: 64, transformOrigin: 'left' }}
+          variants={{ hidden: { scaleX: 0 }, show: { scaleX: 1, transition: { duration: 0.7, ease: EASE } } }}
+        />
+        <motion.span
+          className="eyebrow"
+          variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { duration: 0.5 } } }}
+        >
+          {label}
+        </motion.span>
       </div>
       {title && (
-        <h2
-          className="font-serif kinetic"
+        <motion.h2
+          className="font-serif"
+          variants={{
+            hidden: { opacity: 0, y: 18 },
+            show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE } },
+          }}
           style={{
             fontSize: 'clamp(1.9rem, 4vw, 3rem)',
             fontWeight: 500,
@@ -37,8 +61,8 @@ export default function SectionHeader({ index, label, title }: SectionHeaderProp
           }}
         >
           {title}
-        </h2>
+        </motion.h2>
       )}
-    </Reveal>
+    </motion.div>
   )
 }
