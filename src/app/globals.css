@@ -1,29 +1,28 @@
 @import "tailwindcss";
 
 /* ───────────────────────────────────────────────────────────
-   Watercolour · paper + ink (David-Whyte inspired)
-   the colour comes from the live fluid simulation
+   Studio · dark cinematic theme (frames the 3D room)
    ─────────────────────────────────────────────────────────── */
 :root {
-  --bg:          #f4ece0;
-  --bg-soft:     #ece1cf;
-  --panel:       #ece1cf;
-  --panel-hi:    #e4d7c0;
-  --line:        rgba(28, 23, 18, 0.16);
-  --line-soft:   rgba(28, 23, 18, 0.08);
+  --bg:          #0b0a11;
+  --bg-soft:     #121019;
+  --panel:       #161320;
+  --panel-hi:    #1e1a30;
+  --line:        rgba(236, 233, 245, 0.13);
+  --line-soft:   rgba(236, 233, 245, 0.07);
 
-  --text:        #1c1712;
-  --text-muted:  #5d5446;
-  --text-dim:    #9a8d78;
+  --text:        #ece9f5;
+  --text-muted:  #a7a2bd;
+  --text-dim:    #645f7e;
 
-  /* Ink accent */
-  --accent:      #284b5e;
-  --accent-bri:  #356176;
-  --accent-deep: #16313f;
-  --accent-glow: rgba(40, 75, 94, 0.30);
+  /* Accent — warm amber (the cosy room) */
+  --accent:      #ff9457;
+  --accent-bri:  #ffb184;
+  --accent-deep: #e0703a;
+  --accent-glow: rgba(255, 148, 87, 0.42);
 
-  /* Sienna highlight for stats */
-  --gold:        #b2563a;
+  /* Stat highlight */
+  --gold:        #ffce6a;
 
   --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
   --ease-soft:   cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -115,20 +114,16 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   margin-inline: auto;
 }
 
-/* The fluid simulation canvas sits behind the content; multiply makes the
-   paint stain the paper like real watercolour instead of glowing neon. */
-.fluid {
+.atmosphere {
   position: fixed;
   inset: 0;
-  z-index: 1;
-  width: 100vw;
-  height: 100vh;
+  z-index: 0;
   pointer-events: none;
-  opacity: 0.85;
+  background:
+    radial-gradient(50% 40% at 80% 6%, rgba(255, 148, 87, 0.10), transparent 70%),
+    radial-gradient(45% 40% at 12% 90%, rgba(120, 90, 200, 0.10), transparent 70%);
 }
-.no-fluid .fluid { display: none; }
 
-/* paper grain */
 .grain {
   position: fixed;
   inset: -50%;
@@ -136,8 +131,8 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   height: 200%;
   z-index: 2;
   pointer-events: none;
-  opacity: 0.10;
-  mix-blend-mode: multiply;
+  opacity: 0.06;
+  mix-blend-mode: overlay;
 }
 
 .vignette {
@@ -145,7 +140,7 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  background: radial-gradient(130% 130% at 50% 35%, transparent 62%, rgba(60, 44, 28, 0.10));
+  background: radial-gradient(130% 130% at 50% 35%, transparent 58%, rgba(0, 0, 0, 0.5));
 }
 
 .content { position: relative; z-index: 3; }
@@ -160,26 +155,27 @@ button { font-family: inherit; background: none; border: none; color: inherit; }
   letter-spacing: 0.03em;
   padding: 0.85rem 1.5rem;
   border-radius: 999px;
-  border: 1px solid var(--text);
-  background: rgba(244, 236, 224, 0.55);
-  backdrop-filter: blur(4px);
+  border: 1px solid var(--line);
+  background: rgba(22, 19, 32, 0.5);
+  backdrop-filter: blur(6px);
   transition: color 0.4s var(--ease-out), background 0.4s var(--ease-out),
-    border-color 0.4s var(--ease-out);
+    border-color 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out);
 }
-.btn:hover { background: var(--text); color: var(--bg); }
+.btn:hover { border-color: var(--accent); box-shadow: 0 0 24px -8px var(--accent-glow); }
 .btn-accent {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--bg);
+  color: #1a1208;
+  box-shadow: 0 0 30px -8px var(--accent-glow);
 }
-.btn-accent:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+.btn-accent:hover { background: var(--accent-bri); border-color: var(--accent-bri); }
 
-/* ── Glass / paper card ─────────────────────────────────────── */
+/* ── Glass card ─────────────────────────────────────────────── */
 .glass {
-  background: rgba(244, 236, 224, 0.55);
+  background: rgba(22, 19, 32, 0.5);
   border: 1px solid var(--line);
   border-radius: 16px;
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(10px);
 }
 
 /* ── Animated underline link ────────────────────────────────── */

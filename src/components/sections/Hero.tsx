@@ -1,9 +1,12 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import dynamic from 'next/dynamic'
 import { EASE } from '@/lib/motion'
 import Magnetic from '@/components/ui/Magnetic'
 import { site } from '@/lib/data/site'
+
+const StudioScene = dynamic(() => import('@/components/canvas/StudioScene'), { ssr: false })
 
 const fade = {
   hidden: { opacity: 0, y: 18 },
@@ -27,9 +30,27 @@ export default function Hero() {
         flexDirection: 'column',
         justifyContent: 'center',
         paddingInline: 'clamp(1.25rem, 5vw, 6rem)',
+        overflow: 'hidden',
       }}
     >
-      <div style={{ position: 'relative', maxWidth: 1320, margin: '0 auto', width: '100%' }}>
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+        <StudioScene />
+      </div>
+
+      {/* readability scrim — darker on the left where the text sits */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 1,
+          pointerEvents: 'none',
+          background:
+            'linear-gradient(100deg, rgba(11,10,17,0.92) 0%, rgba(11,10,17,0.6) 34%, rgba(11,10,17,0.05) 60%, transparent 78%)',
+        }}
+      />
+
+      <div style={{ position: 'relative', zIndex: 2, maxWidth: 1320, margin: '0 auto', width: '100%' }}>
         <motion.div
           custom={1.0}
           initial="hidden"
@@ -140,7 +161,7 @@ export default function Hero() {
         }}
       >
         <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>{site.location}</span>
-        <span className="eyebrow" style={{ opacity: 0.8 }}>✦ move to paint ✦</span>
+        <span className="eyebrow" style={{ opacity: 0.8 }}>✦ drag to explore ✦</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
           <span className="eyebrow">Scroll</span>
           <motion.span

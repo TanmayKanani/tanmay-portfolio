@@ -6,11 +6,13 @@ motion throughout.
 
 ## Design
 
-- **Aesthetic** — a **watercolour experience** (David-Whyte inspired): paper + ink,
-  with a real **GPU fluid simulation** (`webgl-fluid`) as the signature interaction —
-  moving the cursor pushes flowing watercolour that blooms and dissipates behind the
-  content. Tune the feel via `FluidCanvas` (`DENSITY_DISSIPATION`, `COLOR_UPDATE_SPEED`)
-  and the canvas `opacity` in `globals.css`.
+- **Aesthetic** — an **immersive 3D studio**: the hero is a real-time, baked 3D room
+  (react-three-fiber) with lit monitor screens, fog and bloom, a camera that slowly
+  orbits and parallaxes to the cursor — on a dark cinematic theme with a warm amber
+  accent. `StudioScene` loads `/public/scene/models/room/model.glb`; the model is
+  trivially swappable.
+- **Asset note** — the 3D model under `public/scene` is a third-party asset used for
+  this prototype. License or replace it (e.g. a CC0 model) before deploying publicly.
 - **Type** — EB Garamond (serif display), Geist (sans body/labels).
 - **Signature interaction** — a **scratch-to-reveal hero**: a paper layer you erase
   with the cursor (`ScratchReveal`) to uncover a living **watercolour wash**

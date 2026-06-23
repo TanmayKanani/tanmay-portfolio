@@ -17,11 +17,11 @@ function level(count: number, max: number): number {
 }
 
 const COLORS = [
-  'rgba(28, 23, 18, 0.07)', // empty
-  'rgba(74, 143, 140, 0.32)',
-  'rgba(47, 97, 117, 0.55)',
-  'rgba(40, 75, 94, 0.76)',
-  'rgba(22, 49, 63, 0.95)',
+  'rgba(236, 233, 245, 0.06)', // empty
+  'rgba(255, 148, 87, 0.32)',
+  'rgba(255, 148, 87, 0.55)',
+  'rgba(255, 177, 132, 0.78)',
+  'rgba(255, 206, 106, 0.96)',
 ]
 
 /** GitHub-style contribution grid built from merged LeetCode + Codeforces activity. */
@@ -96,7 +96,7 @@ export default function Heatmap({ cells, max }: { cells: HeatCell[]; max: number
                       height: 13,
                       borderRadius: 3,
                       background: COLORS[lv],
-                      boxShadow: lv >= 4 ? '0 0 9px rgba(40,75,94,0.5)' : 'none',
+                      boxShadow: lv >= 4 ? '0 0 9px rgba(255,148,87,0.5)' : 'none',
                       cursor: 'pointer',
                     }}
                   />

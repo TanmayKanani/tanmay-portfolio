@@ -7,7 +7,7 @@ import Reveal from '@/components/ui/Reveal'
 import SectionHeader from '@/components/ui/SectionHeader'
 import { site, type Project } from '@/lib/data/site'
 
-const ACCENTS = ['#2f6175', '#b2563a', '#6a5a9c', '#4a8f8c']
+const ACCENTS = ['#ff9457', '#ffce6a', '#9b8cff', '#5fd0c8']
 
 function ProjectRow({ project, index }: { project: Project; index: number }) {
   const [open, setOpen] = useState(false)
