@@ -6,13 +6,12 @@ motion throughout.
 
 ## Design
 
-- **Aesthetic** — an **immersive 3D studio**: the hero is a real-time, baked 3D room
-  (react-three-fiber) with lit monitor screens, fog and bloom, a camera that slowly
-  orbits and parallaxes to the cursor — on a dark cinematic theme with a warm amber
-  accent. `StudioScene` loads `/public/scene/models/room/model.glb`; the model is
-  trivially swappable.
-- **Asset note** — the 3D model under `public/scene` is a third-party asset used for
-  this prototype. License or replace it (e.g. a CC0 model) before deploying publicly.
+- **Aesthetic** — clean, professional and fast: a light, content-first layout with a
+  confident blue accent, elegant serif display headings (EB Garamond) + Geist body,
+  generous whitespace, tasteful scroll reveals, and a thin scroll-progress bar. No
+  heavy 3D/WebGL — it loads instantly and reads great to recruiters.
+- **Highlight** — the Competitive Programming section pulls **live** LeetCode +
+  Codeforces stats and renders a merged submission heatmap (see `src/lib/cp.ts`).
 - **Type** — EB Garamond (serif display), Geist (sans body/labels).
 - **Signature interaction** — a **scratch-to-reveal hero**: a paper layer you erase
   with the cursor (`ScratchReveal`) to uncover a living **watercolour wash**

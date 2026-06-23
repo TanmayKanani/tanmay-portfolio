@@ -18,7 +18,7 @@ function StatBlock({ value, suffix, label }: { value: number; suffix?: string; l
           fontWeight: 500,
           lineHeight: 1,
           letterSpacing: '-0.03em',
-          color: 'var(--gold)',
+          color: 'var(--accent)',
         }}
       >
         <AnimatedCounter value={value} suffix={suffix} />
@@ -57,7 +57,7 @@ function PlatformCard({
         rel="noreferrer"
         whileHover={{ y: -6 }}
         transition={{ duration: 0.4, ease: EASE }}
-        className="glass"
+        className="card"
         style={{ display: 'block', height: '100%', padding: '1.6rem' }}
       >
         <div
@@ -84,7 +84,7 @@ function PlatformCard({
             fontWeight: 500,
             lineHeight: 1,
             letterSpacing: '-0.02em',
-            color: 'var(--accent-bri)',
+            color: 'var(--accent)',
             marginBottom: '1.4rem',
           }}
         >
@@ -137,7 +137,7 @@ export default function CodingView({ data }: { data: CpData }) {
 
       {/* heatmap */}
       <Reveal>
-        <div className="glass" style={{ padding: 'clamp(1.2rem, 3vw, 1.8rem)', marginBottom: '1.6rem' }}>
+        <div className="card" style={{ padding: 'clamp(1.2rem, 3vw, 1.8rem)', marginBottom: '1.6rem' }}>
           <div
             style={{
               display: 'flex',
@@ -158,8 +158,8 @@ export default function CodingView({ data }: { data: CpData }) {
                   width: 6,
                   height: 6,
                   borderRadius: '50%',
-                  background: data.live ? 'var(--accent-bri)' : 'var(--text-dim)',
-                  boxShadow: data.live ? '0 0 8px var(--accent-glow)' : 'none',
+                  background: data.live ? 'var(--accent)' : 'var(--text-dim)',
+                  boxShadow: data.live ? '0 0 8px var(--accent-soft)' : 'none',
                 }}
               />
               {data.live ? 'live · LeetCode + Codeforces' : 'cached'}

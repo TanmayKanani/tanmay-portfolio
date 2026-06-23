@@ -1,50 +1,42 @@
 'use client'
 
-import { motion } from 'framer-motion'
 import { RevealGroup, RevealItem } from '@/components/ui/Reveal'
 import SectionHeader from '@/components/ui/SectionHeader'
-import ScrambleText from '@/components/ui/ScrambleText'
 import { site } from '@/lib/data/site'
 
 export default function Skills() {
   return (
     <section id="skills" className="section">
-      <SectionHeader index="04" label="Toolkit" />
+      <SectionHeader index="04" label="Toolkit" title="What I work with." />
 
       <RevealGroup
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '2.5rem 2rem',
+          gap: '2rem',
         }}
         stagger={0.07}
       >
         {site.skills.map((group) => (
           <RevealItem key={group.group}>
-            <h3 className="eyebrow" style={{ marginBottom: '1.2rem', color: 'var(--accent)' }}>
+            <h3 className="eyebrow" style={{ marginBottom: '1rem', color: 'var(--accent)' }}>
               {group.group}
             </h3>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+            <ul style={{ listStyle: 'none', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
               {group.items.map((item) => (
-                <motion.li
+                <li
                   key={item}
-                  data-hover
-                  whileHover={{ x: 6, color: 'var(--text)' }}
-                  transition={{ duration: 0.3 }}
                   style={{
-                    color: 'var(--text-muted)',
-                    fontSize: '1.05rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.7rem',
+                    fontSize: '0.9rem',
+                    color: 'var(--text)',
+                    border: '1px solid var(--line)',
+                    borderRadius: 8,
+                    padding: '0.4rem 0.8rem',
+                    background: 'var(--panel)',
                   }}
                 >
-                  <span
-                    aria-hidden
-                    style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--accent)' }}
-                  />
-                  <ScrambleText text={item} className="font-mono" />
-                </motion.li>
+                  {item}
+                </li>
               ))}
             </ul>
           </RevealItem>

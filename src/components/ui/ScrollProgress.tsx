@@ -23,7 +23,7 @@ export default function ScrollProgress() {
         right: 0,
         height: 2,
         zIndex: 9997,
-        background: 'linear-gradient(90deg, var(--accent-deep), var(--accent-bri), var(--gold))',
+        background: 'var(--accent)',
       }}
     />
   )
