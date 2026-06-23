@@ -3,6 +3,8 @@ import { EB_Garamond, IBM_Plex_Mono, Geist } from 'next/font/google'
 import './globals.css'
 import LenisProvider from '@/components/providers/LenisProvider'
 import ScrollProgress from '@/components/ui/ScrollProgress'
+import InkTrail from '@/components/canvas/InkTrail'
+import Cursor from '@/components/ui/Cursor'
 import Nav from '@/components/layout/Nav'
 import { site } from '@/lib/data/site'
 
@@ -47,6 +49,8 @@ export default function RootLayout({
       className={`${ebGaramond.variable} ${ibmPlexMono.variable} ${geist.variable}`}
     >
       <body>
+        <InkTrail />
+        <Cursor />
         <ScrollProgress />
         <LenisProvider>
           <Nav />

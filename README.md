@@ -6,10 +6,12 @@ motion throughout.
 
 ## Design
 
-- **Aesthetic** — clean, professional and fast: a light, content-first layout with a
-  confident blue accent, elegant serif display headings (EB Garamond) + Geist body,
-  generous whitespace, tasteful scroll reveals, and a thin scroll-progress bar. No
-  heavy 3D/WebGL — it loads instantly and reads great to recruiters.
+- **Aesthetic** — "electric editorial": a deep ultramarine/cobalt field, warm
+  cream type, coral + cyan accents, elegant serif display (EB Garamond) + Geist body.
+- **Motion** — a glowing cursor light-trail across the page (`InkTrail`), a soft
+  aurora hero backdrop with cursor parallax, a custom cursor, animated section
+  headers, scroll reveals, magnetic buttons, animated stat counters and submission
+  heatmap, and hover-lift cards. Respects `prefers-reduced-motion`.
 - **Highlight** — the Competitive Programming section pulls **live** LeetCode +
   Codeforces stats and renders a merged submission heatmap (see `src/lib/cp.ts`).
 - **Type** — EB Garamond (serif display), Geist (sans body/labels).

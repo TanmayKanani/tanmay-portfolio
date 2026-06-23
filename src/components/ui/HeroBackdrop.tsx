@@ -57,11 +57,14 @@ export default function HeroBackdrop() {
   })
 
   return (
-    <div aria-hidden style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+    <div
+      aria-hidden
+      style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', mixBlendMode: 'screen' }}
+    >
       <div ref={ref} style={{ position: 'absolute', inset: '-10%' }}>
-        <div style={blob('radial-gradient(circle, rgba(47,84,235,0.18), transparent 65%)', 520, '-8%', '4%', 'blobA', 22)} />
-        <div style={blob('radial-gradient(circle, rgba(124,92,255,0.14), transparent 65%)', 460, '20%', '52%', 'blobB', 26)} />
-        <div style={blob('radial-gradient(circle, rgba(31,191,117,0.10), transparent 65%)', 420, '46%', '14%', 'blobC', 30)} />
+        <div style={blob('radial-gradient(circle, rgba(255,111,77,0.34), transparent 65%)', 540, '-8%', '6%', 'blobA', 22)} />
+        <div style={blob('radial-gradient(circle, rgba(95,227,218,0.26), transparent 65%)', 480, '18%', '54%', 'blobB', 26)} />
+        <div style={blob('radial-gradient(circle, rgba(157,176,255,0.24), transparent 65%)', 440, '48%', '12%', 'blobC', 30)} />
       </div>
     </div>
   )

@@ -48,7 +48,7 @@ export default function Nav() {
           right: 0,
           zIndex: 90,
           transition: 'background 0.4s, border-color 0.4s, backdrop-filter 0.4s',
-          background: scrolled ? 'rgba(251,250,247,0.85)' : 'transparent',
+          background: scrolled ? 'rgba(15,26,76,0.72)' : 'transparent',
           backdropFilter: scrolled ? 'blur(12px)' : 'none',
           borderBottom: scrolled ? '1px solid var(--line)' : '1px solid transparent',
         }}
@@ -147,7 +147,7 @@ export default function Nav() {
               position: 'fixed',
               inset: 0,
               zIndex: 80,
-              background: 'rgba(251,250,247,0.98)',
+              background: 'rgba(13,22,66,0.97)',
               backdropFilter: 'blur(16px)',
               display: 'flex',
               flexDirection: 'column',
