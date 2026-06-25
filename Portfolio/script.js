@@ -19,6 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initMagnetic();
     initOrbParallax();
     initTextScramble();
+    initParallaxWords();
+    initMarquee();
     initSmoothHoverLinks();
     initParticles();
     initCursorSpotlight();
@@ -487,9 +489,100 @@ function initLiveStats() {
 function cfColor(r) { return r < 1200 ? '#808080' : r < 1400 ? '#00c853' : r < 1600 ? '#03a9f4' : r < 1900 ? '#aa00ff' : '#ff8f00'; }
 
 /* ==========================================================================
-   9. HEATMAP — GitHub-style activity grid (LeetCode + Codeforces)
+   9. HEATMAP — GitHub-style grid from REAL LeetCode + Codeforces activity
    ========================================================================== */
-function initHeatmap() {
+const HEATMAP_HANDLES = { codeforces: 'tanmay.k', leetcode: 'Tanmay_Kanani' };
+
+// UTC YYYY-MM-DD for a unix-seconds timestamp (matches both API date keys)
+function isoDayUTC(unixSeconds) {
+  return new Date(unixSeconds * 1000).toISOString().slice(0, 10);
+}
+
+function fetchWithTimeout(url, opts, ms) {
+  return Promise.race([
+    fetch(url, opts),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+  ]);
+}
+
+// Pull real daily submission counts. Codeforces is CORS-friendly; LeetCode's
+// calendar comes via the same proxy the donuts already use. Returns a
+// { 'YYYY-MM-DD': count } map plus whether any source actually answered.
+async function fetchRealActivity() {
+  const days = {};
+  let live = false;
+
+  const cf = (async () => {
+    try {
+      const r = await fetchWithTimeout(
+        `https://codeforces.com/api/user.status?handle=${HEATMAP_HANDLES.codeforces}&from=1&count=100000`,
+        undefined, 9000);
+      const j = await r.json();
+      if (j.status === 'OK' && Array.isArray(j.result)) {
+        j.result.forEach(sub => {
+          const d = isoDayUTC(sub.creationTimeSeconds);
+          days[d] = (days[d] || 0) + 1;
+        });
+        live = true;
+      }
+    } catch (e) { console.log('Heatmap: Codeforces activity unavailable —', e.message); }
+  })();
+
+  const lc = (async () => {
+    try {
+      const r = await fetchWithTimeout(
+        `https://alfa-leetcode-api.onrender.com/${HEATMAP_HANDLES.leetcode}/calendar`,
+        undefined, 13000);
+      const j = await r.json();
+      let cal = (j && (j.submissionCalendar
+        || (j.data && j.data.submissionCalendar)
+        || (j.data && j.data.matchedUser && j.data.matchedUser.userCalendar && j.data.matchedUser.userCalendar.submissionCalendar)));
+      if (typeof cal === 'string') cal = JSON.parse(cal);
+      if (cal && typeof cal === 'object') {
+        Object.entries(cal).forEach(([ts, count]) => {
+          const d = isoDayUTC(Number(ts));
+          days[d] = (days[d] || 0) + Number(count);
+        });
+        live = true;
+      }
+    } catch (e) { console.log('Heatmap: LeetCode activity unavailable —', e.message); }
+  })();
+
+  await Promise.allSettled([cf, lc]);
+  return { days, live };
+}
+
+// Deterministic fallback activity (so the grid is never empty if every API is
+// down). Keyed by UTC date, with a recent ~100-day streak.
+function fallbackActivity() {
+  const MS_DAY = 86400000;
+  const t = new Date();
+  const endUTC = Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate());
+  const rand = (s) => { const x = Math.sin(s * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); };
+  const STREAK = 100;
+  const map = {};
+  for (let i = 0; i < 372; i++) {
+    const d = new Date(endUTC - i * MS_DAY);
+    const dow = d.getUTCDay();
+    const r = rand(i + 1);
+    let n;
+    if (i < STREAK) {
+      const weekend = dow === 0 || dow === 6;
+      n = (weekend ? 1 : 2) + Math.floor(rand(i * 1.3 + 7) * (weekend ? 4 : 6));
+    } else {
+      if (r > 0.5) n = 0;
+      else if (r > 0.32) n = 1 + Math.floor(rand(i * 2.1) * 2);
+      else if (r > 0.16) n = 3 + Math.floor(rand(i * 3.7) * 2);
+      else if (r > 0.05) n = 5 + Math.floor(rand(i * 4.3) * 2);
+      else n = 7 + Math.floor(rand(i * 5.9) * 5);
+    }
+    if (n > 0) map[d.toISOString().slice(0, 10)] = n;
+  }
+  return map;
+}
+
+// Render the grid + stats from a { 'YYYY-MM-DD': count } map.
+function renderHeatmap(daysMap) {
   const grid = document.getElementById('heatmap-grid');
   const monthsRow = document.getElementById('heatmap-months');
   if (!grid || !monthsRow) return;
@@ -497,51 +590,29 @@ function initHeatmap() {
   const MS_DAY = 86400000;
   const mNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-  // --- Date range: ~52 weeks ending today, columns aligned to start on Sunday ---
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const gridStart = new Date(today);
-  gridStart.setDate(gridStart.getDate() - 7 * 51 - today.getDay()); // back to a Sunday ~52 weeks ago
+  // Range: ~52 weeks ending today (UTC), columns aligned to a Sunday start.
+  const t = new Date();
+  const endUTC = Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate());
+  const back = endUTC - 7 * 51 * MS_DAY;
+  const startUTC = back - new Date(back).getUTCDay() * MS_DAY;
 
-  // Deterministic pseudo-random so the map stays stable across reloads
-  const rand = (s) => { const x = Math.sin(s * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); };
-
-  // --- Build a solve count for every day in range ---
-  const STREAK = 100; // current streak ending today (matches the "100-day streak" story)
   const days = [];
-  for (let d = new Date(gridStart); d <= today; d.setDate(d.getDate() + 1)) {
-    const date = new Date(d);
-    const idx = Math.round((date - gridStart) / MS_DAY);
-    const fromEnd = Math.round((today - date) / MS_DAY);
-    const dow = date.getDay();
-    const r = rand(idx + 1);
-
-    let solves;
-    if (fromEnd < STREAK) {
-      // Active streak — at least one solve every day, lighter on weekends
-      const weekend = dow === 0 || dow === 6;
-      solves = (weekend ? 1 : 2) + Math.floor(rand(idx * 1.3 + 7) * (weekend ? 4 : 6));
-    } else {
-      // Older history — realistic mix with plenty of rest days
-      if (r > 0.5) solves = 0;
-      else if (r > 0.32) solves = 1 + Math.floor(rand(idx * 2.1) * 2);   // 1-2
-      else if (r > 0.16) solves = 3 + Math.floor(rand(idx * 3.7) * 2);   // 3-4
-      else if (r > 0.05) solves = 5 + Math.floor(rand(idx * 4.3) * 2);   // 5-6
-      else solves = 7 + Math.floor(rand(idx * 5.9) * 5);                 // 7-11
-    }
-    const level = solves === 0 ? 0 : solves <= 2 ? 1 : solves <= 4 ? 2 : solves <= 6 ? 3 : 4;
-    days.push({ date, solves, level });
+  for (let ms = startUTC; ms <= endUTC; ms += MS_DAY) {
+    const date = new Date(ms);
+    const count = daysMap[date.toISOString().slice(0, 10)] || 0;
+    days.push({ date, count });
   }
 
-  // --- Stats from the generated data ---
-  let total = 0, active = 0, maxStreak = 0, run = 0;
+  // Stats
+  let total = 0, active = 0, maxStreak = 0, run = 0, maxCount = 0;
   days.forEach(d => {
-    total += d.solves;
-    if (d.solves > 0) { active++; run++; if (run > maxStreak) maxStreak = run; }
+    total += d.count;
+    if (d.count > maxCount) maxCount = d.count;
+    if (d.count > 0) { active++; run++; if (run > maxStreak) maxStreak = run; }
     else run = 0;
   });
   let currentStreak = 0;
-  for (let i = days.length - 1; i >= 0 && days[i].solves > 0; i--) currentStreak++;
+  for (let i = days.length - 1; i >= 0 && days[i].count > 0; i--) currentStreak++;
 
   countTo('heatmap-total-solves', total);
   countTo('heatmap-max-streak', maxStreak);
@@ -550,23 +621,31 @@ function initHeatmap() {
   statsData.activeDays = active;
   statsData.totalSolvesYear = total;
 
-  // --- Group days into week columns (Sun -> Sat), padding the last partial week ---
+  // Level buckets scaled to the user's own busiest day (GitHub-style)
+  const level = (c) => {
+    if (c <= 0) return 0;
+    if (maxCount <= 0) return 1;
+    const r = c / maxCount;
+    return r > 0.66 ? 4 : r > 0.33 ? 3 : r > 0.12 ? 2 : 1;
+  };
+
+  // Group into week columns (Sun -> Sat); pad the current partial week.
   const weeks = [];
   for (let i = 0; i < days.length; i += 7) {
     const wk = days.slice(i, i + 7);
-    while (wk.length < 7) wk.push(null); // trailing pad for future days in the current week
+    while (wk.length < 7) wk.push(null);
     weeks.push(wk);
   }
 
-  // --- Month labels: one slot per week column, labelled when a new month first appears ---
+  // Month labels: one slot per week, set when a new month first appears.
   monthsRow.innerHTML = '';
   let lastMonth = -1;
   weeks.forEach(wk => {
     const span = document.createElement('span');
     const first = wk.find(Boolean);
     if (first) {
-      const m = first.date.getMonth();
-      if (m !== lastMonth && first.date.getDate() <= 7) {
+      const m = first.date.getUTCMonth();
+      if (m !== lastMonth && first.date.getUTCDate() <= 7) {
         span.textContent = mNames[m];
         lastMonth = m;
       }
@@ -574,7 +653,7 @@ function initHeatmap() {
     monthsRow.appendChild(span);
   });
 
-  // --- Render cells column-major so each grid column is one week ---
+  // Cells column-major so each grid column is one week.
   grid.innerHTML = '';
   weeks.forEach(wk => {
     wk.forEach(cell => {
@@ -583,24 +662,41 @@ function initHeatmap() {
         el.dataset.level = '-1';
         el.className = 'empty';
       } else {
-        el.dataset.level = cell.level;
-        const ds = cell.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-        el.title = (cell.solves === 0 ? 'No activity' : `${cell.solves} ${cell.solves === 1 ? 'solve' : 'solves'} · LC & CF`) + ' — ' + ds;
+        el.dataset.level = level(cell.count);
+        const ds = cell.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+        el.title = (cell.count === 0 ? 'No activity' : `${cell.count} ${cell.count === 1 ? 'submission' : 'submissions'} · LC & CF`) + ' — ' + ds;
       }
       grid.appendChild(el);
     });
   });
 }
 
-// Smooth count-up for the heatmap stat numbers
+function initHeatmap() {
+  if (!document.getElementById('heatmap-grid')) return;
+  // 1) Paint immediately with fallback data so the grid is never empty.
+  renderHeatmap(fallbackActivity());
+  // 2) Upgrade in place to real submission data once the APIs answer.
+  fetchRealActivity()
+    .then(({ days, live }) => {
+      if (live && Object.keys(days).length) renderHeatmap(days);
+    })
+    .catch(() => { /* keep fallback */ });
+}
+
+// Smooth count-up for the stat numbers; animates from the current value so the
+// fallback -> live upgrade transitions cleanly. A token cancels stale loops.
 function countTo(id, target) {
   const el = document.getElementById(id);
   if (!el) return;
+  const token = (parseInt(el.dataset.ctToken || '0', 10) + 1);
+  el.dataset.ctToken = String(token);
+  const startVal = parseInt((el.textContent || '0').replace(/[^0-9-]/g, ''), 10) || 0;
   const dur = 1400, t0 = performance.now();
   (function step(now) {
+    if (el.dataset.ctToken !== String(token)) return; // superseded
     const p = Math.min((now - t0) / dur, 1);
     const eased = 1 - Math.pow(1 - p, 3);
-    el.textContent = Math.round(eased * target).toLocaleString();
+    el.textContent = Math.round(startVal + (target - startVal) * eased).toLocaleString();
     if (p < 1) requestAnimationFrame(step);
     else el.textContent = target.toLocaleString();
   })(t0);
@@ -674,38 +770,111 @@ function initOrbParallax() {
    13. TEXT SCRAMBLE — Section labels scramble on scroll into view
    ========================================================================== */
 function initTextScramble() {
-  const labels = document.querySelectorAll('.section-label');
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
 
-  function scramble(el) {
-    const original = el.textContent;
+  function scramble(el, delay = 0) {
+    const original = el.dataset.scrambleText || el.textContent;
+    el.dataset.scrambleText = original;
     const len = original.length;
-    let iteration = 0;
-    const interval = setInterval(() => {
-      el.textContent = original.split('').map((char, idx) => {
-        if (char === ' ' || char === '—') return char;
-        if (idx < iteration) return original[idx];
-        return chars[Math.floor(Math.random() * chars.length)];
-      }).join('');
-      iteration += 1;
-      if (iteration > len) {
-        el.textContent = original;
-        clearInterval(interval);
-      }
-    }, 30);
+    setTimeout(() => {
+      let iteration = 0;
+      const interval = setInterval(() => {
+        el.textContent = original.split('').map((char, idx) => {
+          if (char === ' ' || char === '—' || char === '/') return char;
+          if (idx < iteration) return original[idx];
+          return chars[Math.floor(Math.random() * chars.length)];
+        }).join('');
+        iteration += 1;
+        if (iteration > len) {
+          el.textContent = original;
+          clearInterval(interval);
+        }
+      }, 30);
+    }, delay);
   }
 
+  // Give skill names a per-group stagger index so they decode in a cascade
+  document.querySelectorAll('.skill-group').forEach(group => {
+    group.querySelectorAll('[data-scramble]').forEach((el, i) => { el.dataset.sidx = i; });
+  });
+
+  const targets = document.querySelectorAll('.section-label, [data-scramble]');
   if (typeof IntersectionObserver !== 'undefined') {
     const obs = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          scramble(entry.target);
-          obs.unobserve(entry.target);
+          const el = entry.target;
+          const delay = el.hasAttribute('data-scramble') ? (parseInt(el.dataset.sidx || '0', 10) * 55) : 0;
+          scramble(el, delay);
+          obs.unobserve(el);
         }
       });
     }, { threshold: 0.5 });
-    labels.forEach(l => obs.observe(l));
+    targets.forEach(t => obs.observe(t));
   }
+}
+
+/* ==========================================================================
+   13b. PARALLAX WORDS — big lines slide horizontally as you scroll
+   ========================================================================== */
+function initParallaxWords() {
+  const section = document.querySelector('.parallax-words');
+  if (!section) return;
+  const lines = section.querySelectorAll('.pw-line');
+  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+  gsap.registerPlugin(ScrollTrigger);
+
+  lines.forEach(line => {
+    const from = parseFloat(line.dataset.pwFrom) || 0;
+    const to = parseFloat(line.dataset.pwTo) || 0;
+    gsap.fromTo(line,
+      { xPercent: from },
+      {
+        xPercent: to,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: section,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: true,
+        },
+      }
+    );
+  });
+}
+
+/* ==========================================================================
+   13c. MARQUEE — infinite running ticker that reacts to scroll velocity
+   ========================================================================== */
+function initMarquee() {
+  const track = document.getElementById('marquee-track');
+  if (!track) return;
+
+  const items = ['Software Engineer', 'Competitive Programmer', 'Full-stack Builder', 'Problem Solver', 'Open to work'];
+  // duplicate the list so a -50% loop is seamless
+  const content = [...items, ...items];
+  track.innerHTML = content.map((item, i) =>
+    `<span class="marquee-item${i % 2 ? ' alt' : ''}">${item}<span class="marquee-star">✦</span></span>`
+  ).join('');
+
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced) return;
+
+  // If GSAP is available, drive the loop with it so we can speed up on scroll.
+  if (typeof gsap !== 'undefined') {
+    track.closest('.marquee').classList.add('gsap-driven'); // disable the CSS fallback animation
+    const tween = gsap.to(track, { xPercent: -50, duration: 24, ease: 'none', repeat: -1 });
+
+    let timeout;
+    window.addEventListener('scroll', () => {
+      gsap.to(tween, { timeScale: 4, duration: 0.3, overwrite: true });
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        gsap.to(tween, { timeScale: 1, duration: 0.8, overwrite: true });
+      }, 120);
+    }, { passive: true });
+  }
+  // Otherwise the CSS `marquee-scroll` keyframes keep it moving.
 }
 
 /* ==========================================================================

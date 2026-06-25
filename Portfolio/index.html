@@ -131,21 +131,61 @@
       </div>
 
       <h3 class="subsection-title reveal-up">Tech Stack</h3>
-      <div class="skills-cloud reveal-up" id="skills-cloud">
-        <span class="skill-pill" data-magnetic>C++</span>
-        <span class="skill-pill" data-magnetic>Python</span>
-        <span class="skill-pill" data-magnetic>JavaScript</span>
-        <span class="skill-pill" data-magnetic>Django</span>
-        <span class="skill-pill" data-magnetic>MySQL</span>
-        <span class="skill-pill" data-magnetic>MongoDB</span>
-        <span class="skill-pill" data-magnetic>Tailwind CSS</span>
-        <span class="skill-pill" data-magnetic>Git / GitHub</span>
-        <span class="skill-pill" data-magnetic>Vercel</span>
-        <span class="skill-pill" data-magnetic>HTML / CSS</span>
-        <span class="skill-pill" data-magnetic>Canvas API</span>
-        <span class="skill-pill" data-magnetic>REST APIs</span>
+      <div class="skills-grid reveal-up" id="skills-grid">
+        <div class="skill-group">
+          <h4 class="skill-group-title">Languages</h4>
+          <ul class="skill-list">
+            <li class="skill-item"><span class="skill-dot"></span><span class="skill-name" data-scramble>C++</span></li>
+            <li class="skill-item"><span class="skill-dot"></span><span class="skill-name" data-scramble>Python</span></li>
+            <li class="skill-item"><span class="skill-dot"></span><span class="skill-name" data-scramble>JavaScript</span></li>
+            <li class="skill-item"><span class="skill-dot"></span><span class="skill-name" data-scramble>SQL</span></li>
+          </ul>
+        </div>
+        <div class="skill-group">
+          <h4 class="skill-group-title">Web</h4>
+          <ul class="skill-list">
+            <li class="skill-item"><span class="skill-dot"></span><span class="skill-name" data-scramble>React.js</span></li>
+            <li class="skill-item"><span class="skill-dot"></span><span class="skill-name" data-scramble>Django</span></li>
+            <li class="skill-item"><span class="skill-dot"></span><span class="skill-name" data-scramble>Tailwind CSS</span></li>
+            <li class="skill-item"><span class="skill-dot"></span><span class="skill-name" data-scramble>HTML5 / CSS3</span></li>
+          </ul>
+        </div>
+        <div class="skill-group">
+          <h4 class="skill-group-title">Databases</h4>
+          <ul class="skill-list">
+            <li class="skill-item"><span class="skill-dot"></span><span class="skill-name" data-scramble>MySQL</span></li>
+            <li class="skill-item"><span class="skill-dot"></span><span class="skill-name" data-scramble>MongoDB</span></li>
+            <li class="skill-item"><span class="skill-dot"></span><span class="skill-name" data-scramble>SQLite</span></li>
+          </ul>
+        </div>
+        <div class="skill-group">
+          <h4 class="skill-group-title">Tools</h4>
+          <ul class="skill-list">
+            <li class="skill-item"><span class="skill-dot"></span><span class="skill-name" data-scramble>Git / GitHub</span></li>
+            <li class="skill-item"><span class="skill-dot"></span><span class="skill-name" data-scramble>Docker</span></li>
+            <li class="skill-item"><span class="skill-dot"></span><span class="skill-name" data-scramble>Postman</span></li>
+            <li class="skill-item"><span class="skill-dot"></span><span class="skill-name" data-scramble>Vercel</span></li>
+          </ul>
+        </div>
+        <div class="skill-group">
+          <h4 class="skill-group-title">Core CS</h4>
+          <ul class="skill-list">
+            <li class="skill-item"><span class="skill-dot"></span><span class="skill-name" data-scramble>DSA</span></li>
+            <li class="skill-item"><span class="skill-dot"></span><span class="skill-name" data-scramble>OOP</span></li>
+            <li class="skill-item"><span class="skill-dot"></span><span class="skill-name" data-scramble>DBMS</span></li>
+            <li class="skill-item"><span class="skill-dot"></span><span class="skill-name" data-scramble>REST APIs</span></li>
+          </ul>
+        </div>
       </div>
     </div>
+  </section>
+
+  <!-- ====== WHAT I DO — PARALLAX WORDS ====== -->
+  <section class="parallax-words" aria-label="What I do">
+    <div class="pw-line" data-pw-from="-12" data-pw-to="12">Algorithms</div>
+    <div class="pw-line pw-italic" data-pw-from="18" data-pw-to="-18">Full-stack</div>
+    <div class="pw-line" data-pw-from="-24" data-pw-to="24">Problem-solving</div>
+    <div class="pw-line pw-italic" data-pw-from="30" data-pw-to="-30">Shipping</div>
   </section>
 
   <!-- ====== CODING PROFILES ====== -->
@@ -251,14 +291,14 @@
           <div class="heatmap-stats">
             <div class="h-stat">
               <span class="h-stat-num" id="heatmap-total-solves">0</span>
-              <span class="h-stat-label">Total Solves</span>
+              <span class="h-stat-label">Submissions</span>
             </div>
             <div class="h-stat">
-              <span class="h-stat-num" id="heatmap-max-streak">100</span>
+              <span class="h-stat-num" id="heatmap-max-streak">0</span>
               <span class="h-stat-label">Max Streak</span>
             </div>
             <div class="h-stat">
-              <span class="h-stat-num" id="heatmap-current-streak">100</span>
+              <span class="h-stat-num" id="heatmap-current-streak">0</span>
               <span class="h-stat-label">Current Streak</span>
             </div>
             <div class="h-stat">
@@ -387,6 +427,11 @@
       </div>
     </div>
   </section>
+
+  <!-- ====== MARQUEE — running ticker ====== -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track" id="marquee-track"></div>
+  </div>
 
   <!-- ====== CONTACT ====== -->
   <section id="contact" class="section">
