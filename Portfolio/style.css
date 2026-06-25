@@ -172,11 +172,12 @@ body.cursor-hover .cursor {
 
 .nav-cta {
   font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 0.85rem;
-  color: var(--text-dim);
-  border: 1px solid var(--border);
-  padding: 0.5rem 1.3rem;
+  font-weight: 600;
+  font-size: 0.98rem;
+  color: var(--text);
+  border: 1px solid rgba(232, 197, 71, 0.45);
+  background: rgba(232, 197, 71, 0.06);
+  padding: 0.62rem 1.7rem;
   border-radius: 100px;
   transition: all 0.3s;
   position: relative;

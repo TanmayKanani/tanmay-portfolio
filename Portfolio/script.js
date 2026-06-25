@@ -904,51 +904,57 @@ function initContactForm() {
   };
 
   const EMAIL = 'tanmaykanani8@gmail.com';
+  const looksUnset = (v) => !v || /^(your|paste|xxxx|key|endpoint)/i.test(v);
 
-  form.addEventListener('submit', (e) => {
+  // No backend configured: copy the address and show it — no jarring
+  // "choose an app" mailto popup. The visitor can email directly.
+  function emailFallback() {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(EMAIL).catch(() => {});
+    }
+    setStatus(`Email me directly at ${EMAIL} — address copied to your clipboard.`, 'ok');
+  }
+
+  async function postTo(url, body) {
+    const r = await fetch(url, { method: 'POST', headers: { Accept: 'application/json' }, body });
+    let json = {};
+    try { json = await r.json(); } catch (_) { /* ignore */ }
+    return r.ok && (json.success === undefined || json.success === true);
+  }
+
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!form.checkValidity()) { form.reportValidity(); return; }
 
-    const name = document.getElementById('form-name').value.trim();
-    const email = document.getElementById('form-email').value.trim();
-    const message = document.getElementById('form-message').value.trim();
-
-    const openEmail = () => {
-      const subject = encodeURIComponent(`Portfolio enquiry from ${name}`);
-      const body = encodeURIComponent(`${message}\n\n— ${name}\n${email}`);
-      window.location.href = `mailto:${EMAIL}?subject=${subject}&body=${body}`;
-    };
-
+    const accessKey = (form.dataset.accessKey || '').trim();
     const endpoint = (form.dataset.endpoint || '').trim();
-    const hasFormspree = /^https:\/\/formspree\.io\/f\/\w+$/.test(endpoint);
+    const useWeb3 = !looksUnset(accessKey);
+    const useFormspree = /^https:\/\/formspree\.io\/f\/\w+$/.test(endpoint);
 
-    if (hasFormspree) {
-      // Submit in the background so the page never navigates away.
-      if (btn) btn.disabled = true;
-      setStatus('Sending…');
-      fetch(endpoint, {
-        method: 'POST',
-        headers: { Accept: 'application/json' },
-        body: new FormData(form),
-      })
-        .then((r) => {
-          if (r.ok) {
-            form.reset();
-            setStatus("Thanks — your message is on its way. I'll reply soon. ✦", 'ok');
-          } else {
-            setStatus('Hmm, that didn’t go through — opening your email app instead…', 'err');
-            openEmail();
-          }
-        })
-        .catch(() => {
-          setStatus('Network hiccup — opening your email app instead…', 'err');
-          openEmail();
-        })
-        .finally(() => { if (btn) btn.disabled = false; });
-    } else {
-      // No backend configured: open a pre-filled email (works everywhere).
-      setStatus('Opening your email app… if nothing happens, write to ' + EMAIL, 'ok');
-      openEmail();
+    if (!useWeb3 && !useFormspree) { emailFallback(); return; }
+
+    if (btn) btn.disabled = true;
+    setStatus('Sending…');
+    try {
+      let ok;
+      if (useWeb3) {
+        const fd = new FormData(form);
+        fd.append('access_key', accessKey);
+        fd.append('subject', `New portfolio message from ${document.getElementById('form-name').value.trim()}`);
+        ok = await postTo('https://api.web3forms.com/submit', fd);
+      } else {
+        ok = await postTo(endpoint, new FormData(form));
+      }
+      if (ok) {
+        form.reset();
+        setStatus("Thanks — your message just landed in my inbox. I'll reply soon. ✦", 'ok');
+      } else {
+        setStatus(`Couldn’t send right now — please email me at ${EMAIL}.`, 'err');
+      }
+    } catch (_) {
+      setStatus(`Network issue — please email me at ${EMAIL}.`, 'err');
+    } finally {
+      if (btn) btn.disabled = false;
     }
   });
 }
