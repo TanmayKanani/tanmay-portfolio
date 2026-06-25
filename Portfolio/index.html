@@ -56,7 +56,7 @@
       <a href="#achievements" class="nav-link">Milestones</a>
       <a href="#contact" class="nav-link">Contact</a>
     </div>
-    <a href="mailto:tanmaykanani8@gmail.com" class="nav-cta">Say Hello</a>
+    <a href="Tanmay_Kanani_Resume.pdf" target="_blank" rel="noopener" class="nav-cta">Résumé</a>
     <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle menu">
       <span></span><span></span><span></span>
     </button>
@@ -382,6 +382,22 @@
             </div>
           </div>
         </div>
+
+        <div class="project-card reveal-up">
+          <div class="project-curtain" style="--curtain: #4ade80">
+            <h3>AgriSaathi</h3>
+            <span class="curtain-hint"><i class="fa-solid fa-hand-pointer"></i> Hover to explore</span>
+          </div>
+          <div class="project-inner">
+            <span class="project-num">04</span>
+            <h3>AgriSaathi</h3>
+            <p>An AI-powered smart-agriculture platform — crop &amp; fertilizer recommendation, disease detection, an analytics dashboard, and a marketplace — backed by an ML service (LightGBM / XGBoost, explained with SHAP) behind a Next.js app.</p>
+            <div class="project-tags"><span>Next.js</span><span>FastAPI</span><span>ML</span></div>
+            <div class="project-links">
+              <a href="https://github.com/aayushroopchandani/AgriSaathi" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> Code</a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -458,6 +474,10 @@
               <i class="fa-solid fa-location-dot"></i>
               <span>Ahmedabad, Gujarat, India</span>
             </div>
+            <a href="Tanmay_Kanani_Resume.pdf" target="_blank" rel="noopener" class="contact-row">
+              <i class="fa-solid fa-file-arrow-down"></i>
+              <span>Download Résumé (PDF)</span>
+            </a>
           </div>
           <div class="contact-socials">
             <a href="https://github.com/TanmayKanani" target="_blank" rel="noopener" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
@@ -466,7 +486,11 @@
             <a href="https://codeforces.com/profile/tanmay.k" target="_blank" rel="noopener" aria-label="Codeforces"><i class="fa-solid fa-chart-line"></i></a>
           </div>
         </div>
-        <form class="contact-form reveal-up" action="https://formspree.io/f/xpwdjrkl" method="POST" id="contact-form">
+        <!-- To deliver straight to an inbox, create a free form at formspree.io
+             and paste its endpoint (e.g. https://formspree.io/f/abcwxyz) into
+             data-endpoint below. Left blank, "Send Message" opens a pre-filled
+             email instead, so it always works. -->
+        <form class="contact-form reveal-up" id="contact-form" data-endpoint="">
           <div class="form-group">
             <input type="text" name="name" id="form-name" required placeholder=" " autocomplete="off">
             <label for="form-name">Your Name</label>
@@ -485,6 +509,7 @@
           <button type="submit" class="btn btn-primary">
             Send Message <i class="fa-solid fa-paper-plane"></i>
           </button>
+          <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
         </form>
       </div>
     </div>

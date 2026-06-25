@@ -880,7 +880,7 @@ body.nav-open .nav-hamburger span:nth-child(3) { transform: rotate(-45deg) trans
    ========================================================================== */
 .projects-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.8rem;
 }
 .project-card {
@@ -1045,6 +1045,16 @@ a.contact-row:hover i { transform: scale(1.2); }
 
 /* Form */
 .contact-form { display: flex; flex-direction: column; gap: 2.2rem; }
+.form-status {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-top: -0.8rem;
+  min-height: 1.2em;
+  transition: color 0.3s var(--ease-out);
+}
+.form-status.ok { color: var(--accent); }
+.form-status.err { color: var(--accent-2); }
 .form-group { position: relative; }
 .form-group input, .form-group textarea {
   width: 100%; padding: 1rem 0;

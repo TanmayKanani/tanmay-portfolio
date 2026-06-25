@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initTextScramble();
     initParallaxWords();
     initMarquee();
+    initContactForm();
     initSmoothHoverLinks();
     initParticles();
     initCursorSpotlight();
@@ -770,26 +771,30 @@ function initOrbParallax() {
    13. TEXT SCRAMBLE — Section labels scramble on scroll into view
    ========================================================================== */
 function initTextScramble() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+  // Glitchy, code-like glyphs (lots of underscores so it reads like decoding)
+  const chars = '!<>-_\\/[]{}—=+*^?#________';
 
-  function scramble(el, delay = 0) {
+  function scramble(el, delay = 0, speed = 1) {
     const original = el.dataset.scrambleText || el.textContent;
     el.dataset.scrambleText = original;
     const len = original.length;
-    setTimeout(() => {
+    if (el._scrambleTimer) clearInterval(el._scrambleTimer);
+    if (el._scrambleDelay) clearTimeout(el._scrambleDelay);
+    el._scrambleDelay = setTimeout(() => {
       let iteration = 0;
-      const interval = setInterval(() => {
+      el._scrambleTimer = setInterval(() => {
         el.textContent = original.split('').map((char, idx) => {
           if (char === ' ' || char === '—' || char === '/') return char;
           if (idx < iteration) return original[idx];
           return chars[Math.floor(Math.random() * chars.length)];
         }).join('');
-        iteration += 1;
-        if (iteration > len) {
+        iteration += speed;
+        if (iteration >= len) {
           el.textContent = original;
-          clearInterval(interval);
+          clearInterval(el._scrambleTimer);
+          el._scrambleTimer = null;
         }
-      }, 30);
+      }, 35);
     }, delay);
   }
 
@@ -798,6 +803,13 @@ function initTextScramble() {
     group.querySelectorAll('[data-scramble]').forEach((el, i) => { el.dataset.sidx = i; });
   });
 
+  // Re-scramble a skill name whenever its row is hovered (the v2 effect)
+  document.querySelectorAll('[data-scramble]').forEach(el => {
+    const hoverTarget = el.closest('.skill-item') || el;
+    hoverTarget.addEventListener('mouseenter', () => scramble(el, 0, 0.5));
+  });
+
+  // Decode once when scrolled into view
   const targets = document.querySelectorAll('.section-label, [data-scramble]');
   if (typeof IntersectionObserver !== 'undefined') {
     const obs = new IntersectionObserver((entries) => {
@@ -805,7 +817,7 @@ function initTextScramble() {
         if (entry.isIntersecting) {
           const el = entry.target;
           const delay = el.hasAttribute('data-scramble') ? (parseInt(el.dataset.sidx || '0', 10) * 55) : 0;
-          scramble(el, delay);
+          scramble(el, delay, 1);
           obs.unobserve(el);
         }
       });
@@ -875,6 +887,70 @@ function initMarquee() {
     }, { passive: true });
   }
   // Otherwise the CSS `marquee-scroll` keyframes keep it moving.
+}
+
+/* ==========================================================================
+   13d. CONTACT FORM — real submission (Formspree if configured, else email)
+   ========================================================================== */
+function initContactForm() {
+  const form = document.getElementById('contact-form');
+  if (!form) return;
+  const status = document.getElementById('form-status');
+  const btn = form.querySelector('button[type="submit"]');
+  const setStatus = (msg, kind) => {
+    if (!status) return;
+    status.textContent = msg;
+    status.className = 'form-status' + (kind ? ' ' + kind : '');
+  };
+
+  const EMAIL = 'tanmaykanani8@gmail.com';
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+
+    const name = document.getElementById('form-name').value.trim();
+    const email = document.getElementById('form-email').value.trim();
+    const message = document.getElementById('form-message').value.trim();
+
+    const openEmail = () => {
+      const subject = encodeURIComponent(`Portfolio enquiry from ${name}`);
+      const body = encodeURIComponent(`${message}\n\n— ${name}\n${email}`);
+      window.location.href = `mailto:${EMAIL}?subject=${subject}&body=${body}`;
+    };
+
+    const endpoint = (form.dataset.endpoint || '').trim();
+    const hasFormspree = /^https:\/\/formspree\.io\/f\/\w+$/.test(endpoint);
+
+    if (hasFormspree) {
+      // Submit in the background so the page never navigates away.
+      if (btn) btn.disabled = true;
+      setStatus('Sending…');
+      fetch(endpoint, {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        body: new FormData(form),
+      })
+        .then((r) => {
+          if (r.ok) {
+            form.reset();
+            setStatus("Thanks — your message is on its way. I'll reply soon. ✦", 'ok');
+          } else {
+            setStatus('Hmm, that didn’t go through — opening your email app instead…', 'err');
+            openEmail();
+          }
+        })
+        .catch(() => {
+          setStatus('Network hiccup — opening your email app instead…', 'err');
+          openEmail();
+        })
+        .finally(() => { if (btn) btn.disabled = false; });
+    } else {
+      // No backend configured: open a pre-filled email (works everywhere).
+      setStatus('Opening your email app… if nothing happens, write to ' + EMAIL, 'ok');
+      openEmail();
+    }
+  });
 }
 
 /* ==========================================================================
