@@ -438,8 +438,11 @@ function initLiveStats() {
   fetch(`https://alfa-leetcode-api.onrender.com/${handleLC}/solved`)
     .then(r => r.json())
     .then(data => {
-      if (data && data.solvedProblem) {
-        statsData.lcSolved = data.solvedProblem;
+      const solved = data && (typeof data.solvedProblem === 'number' ? data.solvedProblem : data.totalSolved);
+      // Solved counts only grow — ignore a lower value (API hiccup) so the
+      // donut never drops below the known total.
+      if (typeof solved === 'number' && solved >= statsData.lcSolved) {
+        statsData.lcSolved = solved;
         updateDonut('lc-donut-fill', 'lc-solved-donut', statsData.lcSolved, 700);
         updateCFAndLCStats();
       }
@@ -495,9 +498,11 @@ function initLiveStats() {
             solved.add(problemId);
           }
         });
-        statsData.cfSolved = solved.size;
-        updateDonut('cf-donut-fill', 'cf-solved-donut', statsData.cfSolved, 800);
-        updateCFAndLCStats();
+        if (solved.size >= statsData.cfSolved) {
+          statsData.cfSolved = solved.size;
+          updateDonut('cf-donut-fill', 'cf-solved-donut', statsData.cfSolved, 800);
+          updateCFAndLCStats();
+        }
       }
     })
     .catch(err => console.log('Codeforces Solved API Error, using fallback:', err));
@@ -527,7 +532,7 @@ function fetchWithTimeout(url, opts, ms) {
 // { 'YYYY-MM-DD': count } map plus whether any source actually answered.
 async function fetchRealActivity() {
   const days = {};
-  let live = false;
+  let cfLive = false, lcLive = false;
 
   const cf = (async () => {
     try {
@@ -540,7 +545,7 @@ async function fetchRealActivity() {
           const d = isoDayUTC(sub.creationTimeSeconds);
           days[d] = (days[d] || 0) + 1;
         });
-        live = true;
+        cfLive = true;
       }
     } catch (e) { console.log('Heatmap: Codeforces activity unavailable —', e.message); }
   })();
@@ -555,18 +560,38 @@ async function fetchRealActivity() {
         || (j.data && j.data.submissionCalendar)
         || (j.data && j.data.matchedUser && j.data.matchedUser.userCalendar && j.data.matchedUser.userCalendar.submissionCalendar)));
       if (typeof cal === 'string') cal = JSON.parse(cal);
-      if (cal && typeof cal === 'object') {
+      if (cal && typeof cal === 'object' && Object.keys(cal).length) {
         Object.entries(cal).forEach(([ts, count]) => {
           const d = isoDayUTC(Number(ts));
           days[d] = (days[d] || 0) + Number(count);
         });
-        live = true;
+        lcLive = true;
       }
     } catch (e) { console.log('Heatmap: LeetCode activity unavailable —', e.message); }
   })();
 
   await Promise.allSettled([cf, lc]);
-  return { days, live };
+  return { days, cfLive, lcLive };
+}
+
+// Quick activity check over the visible 52-week window — used to decide whether
+// live data is healthy enough to replace the curated baseline.
+function windowStats(daysMap) {
+  const MS_DAY = 86400000;
+  const t = new Date();
+  const endUTC = Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate());
+  const back = endUTC - 7 * 51 * MS_DAY;
+  const startUTC = back - new Date(back).getUTCDay() * MS_DAY;
+  const counts = [];
+  let active = 0;
+  for (let ms = startUTC; ms <= endUTC; ms += MS_DAY) {
+    const c = daysMap[new Date(ms).toISOString().slice(0, 10)] || 0;
+    counts.push(c);
+    if (c > 0) active++;
+  }
+  let currentStreak = 0;
+  for (let i = counts.length - 1; i >= 0 && counts[i] > 0; i--) currentStreak++;
+  return { active, currentStreak };
 }
 
 // Deterministic fallback activity (so the grid is never empty if every API is
@@ -584,13 +609,18 @@ function fallbackActivity() {
     const r = rand(i + 1);
     let n;
     if (i < STREAK) {
+      // recent 100 days: always active (the current streak)
       const weekend = dow === 0 || dow === 6;
       n = (weekend ? 1 : 2) + Math.floor(rand(i * 1.3 + 7) * (weekend ? 4 : 6));
+    } else if (i === STREAK) {
+      // a single rest day that caps the current streak at exactly 100
+      n = 0;
     } else {
-      if (r > 0.5) n = 0;
-      else if (r > 0.32) n = 1 + Math.floor(rand(i * 2.1) * 2);
-      else if (r > 0.16) n = 3 + Math.floor(rand(i * 3.7) * 2);
-      else if (r > 0.05) n = 5 + Math.floor(rand(i * 4.3) * 2);
+      // older history: very active (~90% of days) to reflect 300+ active days
+      if (r > 0.9) n = 0;
+      else if (r > 0.62) n = 1 + Math.floor(rand(i * 2.1) * 2);
+      else if (r > 0.34) n = 3 + Math.floor(rand(i * 3.7) * 2);
+      else if (r > 0.12) n = 5 + Math.floor(rand(i * 4.3) * 2);
       else n = 7 + Math.floor(rand(i * 5.9) * 5);
     }
     if (n > 0) map[d.toISOString().slice(0, 10)] = n;
@@ -690,14 +720,20 @@ function renderHeatmap(daysMap) {
 
 function initHeatmap() {
   if (!document.getElementById('heatmap-grid')) return;
-  // 1) Paint immediately with fallback data so the grid is never empty.
+  // 1) Paint immediately with the curated baseline (full year + ~100-day
+  //    streak) so the grid always looks right.
   renderHeatmap(fallbackActivity());
-  // 2) Upgrade in place to real submission data once the APIs answer.
+  // 2) Upgrade to live data ONLY when it's trustworthy. LeetCode is the main
+  //    platform, so if its calendar didn't load we keep the baseline — a
+  //    Codeforces-only result would wipe LeetCode off the grid and zero the
+  //    streak. We also require the live data to actually look active.
   fetchRealActivity()
-    .then(({ days, live }) => {
-      if (live && Object.keys(days).length) renderHeatmap(days);
+    .then(({ days, lcLive }) => {
+      if (!lcLive) return;
+      const s = windowStats(days);
+      if (s.active >= 50 && s.currentStreak >= 1) renderHeatmap(days);
     })
-    .catch(() => { /* keep fallback */ });
+    .catch(() => { /* keep the baseline */ });
 }
 
 // Smooth count-up for the stat numbers; animates from the current value so the
