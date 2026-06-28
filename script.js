@@ -198,10 +198,26 @@ function initNavScroll() {
     });
   });
 
-  // Hamburger toggle
+  // Mobile menu: toggle + close interactions
+  const navLinksEl = document.getElementById('nav-links');
+  const closeMenu = () => document.body.classList.remove('nav-open');
+
   if (hamburger) {
-    hamburger.addEventListener('click', () => document.body.classList.toggle('nav-open'));
+    hamburger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.body.classList.toggle('nav-open');
+    });
   }
+  // Tap the dark overlay area (anywhere that isn't a link) to close
+  if (navLinksEl) {
+    navLinksEl.addEventListener('click', (e) => {
+      if (e.target === navLinksEl) closeMenu();
+    });
+  }
+  // Tapping any menu entry (including the Résumé button) closes it too
+  document.querySelectorAll('.nav-link').forEach(link => link.addEventListener('click', closeMenu));
+  // Escape closes
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
 }
 
 /* ==========================================================================
@@ -1037,14 +1053,16 @@ function initSmoothHoverLinks() {
 function initParticles() {
   const canvas = document.getElementById('particle-canvas');
   if (!canvas) return;
-  if (window.matchMedia('(pointer: coarse)').matches) return; // skip on mobile
 
   const ctx = canvas.getContext('2d');
+  // Runs on mobile too (lighter): particles drift on their own and react to
+  // a finger drag, so the background still feels alive without a cursor.
+  const isCoarse = window.matchMedia('(pointer: coarse)').matches;
   let w, h;
   const mouse = { x: -500, y: -500 };
   const particles = [];
-  const count = 70;
-  const connectDist = 120;
+  const count = isCoarse ? 38 : 70;
+  const connectDist = isCoarse ? 100 : 120;
   const mouseDist = 150;
 
   function resize() {
@@ -1059,6 +1077,17 @@ function initParticles() {
     mouse.y = e.clientY;
   });
   window.addEventListener('mouseleave', () => {
+    mouse.x = -500;
+    mouse.y = -500;
+  });
+  // Touch: let the particles swirl around a finger drag on phones
+  window.addEventListener('touchmove', e => {
+    if (e.touches && e.touches[0]) {
+      mouse.x = e.touches[0].clientX;
+      mouse.y = e.touches[0].clientY;
+    }
+  }, { passive: true });
+  window.addEventListener('touchend', () => {
     mouse.x = -500;
     mouse.y = -500;
   });
