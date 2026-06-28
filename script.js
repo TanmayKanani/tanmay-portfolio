@@ -1061,9 +1061,11 @@ function initParticles() {
   let w, h;
   const mouse = { x: -500, y: -500 };
   const particles = [];
-  const count = isCoarse ? 38 : 70;
-  const connectDist = isCoarse ? 100 : 120;
+  const count = isCoarse ? 55 : 70;
+  const connectDist = isCoarse ? 115 : 120;
   const mouseDist = 150;
+  let touching = false;
+  let roam = 0;
 
   function resize() {
     w = canvas.width = window.innerWidth;
@@ -1080,17 +1082,24 @@ function initParticles() {
     mouse.x = -500;
     mouse.y = -500;
   });
-  // Touch: let the particles swirl around a finger drag on phones
-  window.addEventListener('touchmove', e => {
-    if (e.touches && e.touches[0]) {
-      mouse.x = e.touches[0].clientX;
-      mouse.y = e.touches[0].clientY;
-    }
+  // Touch takes over the pointer while a finger is down
+  window.addEventListener('touchstart', e => {
+    touching = true;
+    if (e.touches[0]) { mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; }
   }, { passive: true });
-  window.addEventListener('touchend', () => {
-    mouse.x = -500;
-    mouse.y = -500;
-  });
+  window.addEventListener('touchmove', e => {
+    if (e.touches[0]) { mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; }
+  }, { passive: true });
+  window.addEventListener('touchend', () => { touching = false; });
+
+  // On touch devices a virtual point gently wanders the screen so the field
+  // stays as alive as the desktop cursor; a finger drag overrides it.
+  function updateRoam() {
+    if (!isCoarse || touching) return;
+    roam += 0.01;
+    mouse.x = w * (0.5 + 0.4 * Math.sin(roam) * Math.cos(roam * 0.5));
+    mouse.y = h * (0.5 + 0.4 * Math.sin(roam * 0.7));
+  }
 
   // Create particles
   for (let i = 0; i < count; i++) {
@@ -1106,6 +1115,7 @@ function initParticles() {
 
   function animate() {
     ctx.clearRect(0, 0, w, h);
+    updateRoam();
 
     for (let i = 0; i < particles.length; i++) {
       const p = particles[i];

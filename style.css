@@ -137,6 +137,15 @@ body.cursor-hover .cursor {
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
+/* While the mobile menu is open, drop the nav's backdrop-filter. A
+   backdrop-filter makes the nav a containing block, which would trap the
+   fixed fullscreen overlay inside the 70px nav bar (menu items overlapping
+   the page). Removing it lets the overlay cover the whole viewport. */
+body.nav-open #main-nav {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition: none;
+}
 
 .nav-logo {
   font-family: var(--font-heading);
