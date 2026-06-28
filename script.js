@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Wait a tiny moment for GSAP deferred scripts to be ready
   requestAnimationFrame(() => {
     initCursor();
-    initHeroLetters();
+    initPreloader();
     initNavScroll();
     initScrollHint();
     initScrollReveal();
@@ -147,6 +147,69 @@ function initHeroLetters() {
   gsap.from('.hero-badges .hero-badge', { opacity: 0, y: 20, duration: 0.6, stagger: 0.08, delay: 1.1, ease: 'power3.out' });
   gsap.from('.hero-ctas', { opacity: 0, y: 20, duration: 0.8, delay: 1.4, ease: 'power3.out' });
   gsap.from('.scroll-hint', { opacity: 0, duration: 0.8, delay: 1.8 });
+}
+
+/* ==========================================================================
+   2b. INTRO PRELOADER — name reveal that lifts to reveal the hero
+   ========================================================================== */
+function initPreloader() {
+  const pre = document.getElementById('preloader');
+  if (!pre) { initHeroLetters(); return; }
+
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    initHeroLetters();              // hero animates in as the curtain lifts
+    pre.classList.add('done');
+    setTimeout(() => { pre.style.display = 'none'; }, 900);
+  };
+
+  // Only play the full intro once per session (skip on refresh / back-nav)
+  try {
+    if (sessionStorage.getItem('tk_intro')) {
+      pre.style.display = 'none';
+      initHeroLetters();
+      return;
+    }
+    sessionStorage.setItem('tk_intro', '1');
+  } catch (e) { /* storage blocked — just play it */ }
+
+  // Split each line into letters for a staggered rise (keep the accent dot)
+  const letters = [];
+  pre.querySelectorAll('.pl-line').forEach(line => {
+    const frag = document.createDocumentFragment();
+    [...line.childNodes].forEach(node => {
+      if (node.nodeType === 3) {
+        node.textContent.split('').forEach(ch => {
+          const s = document.createElement('span');
+          s.className = 'pl-letter';
+          s.textContent = ch;
+          frag.appendChild(s);
+          letters.push(s);
+        });
+      } else {
+        frag.appendChild(node);
+        letters.push(node);
+      }
+    });
+    line.innerHTML = '';
+    line.appendChild(frag);
+  });
+
+  // Hard safety: never let the preloader linger if something stalls
+  setTimeout(finish, 4500);
+
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced || typeof gsap === 'undefined') {
+    setTimeout(finish, reduced ? 350 : 1300);
+    return;
+  }
+
+  gsap.set(letters, { yPercent: 115, opacity: 0 });
+  gsap.timeline({ onComplete: finish })
+    .to(letters, { yPercent: 0, opacity: 1, duration: 0.6, stagger: 0.035, ease: 'power3.out' }, 0.15)
+    .to({}, { duration: 0.25 }); // brief hold before the curtain lifts
 }
 
 /* ==========================================================================
