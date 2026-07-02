@@ -421,14 +421,14 @@ const HANDLES = { lc: 'Tanmay_Kanani', cf: 'tanmay.k', cc: 'tanmay_kanani' };
 // Last-resort seeds, shown only until real data (live, or cached from a
 // previous visit) takes over. A live value ALWAYS wins once its API answers.
 const statsData = {
-  lcSolved: 470,
-  cfSolved: 494,
-  ccSolved: 121,
+  lcSolved: 497,
+  cfSolved: 516,
+  ccSolved: 131,
   lcRating: 1653,
   lcPercentile: 'Top 18%',
-  cfRating: 1352,
-  cfRank: 'Pupil',
-  ccRating: 1447,
+  cfRating: 1164,
+  cfRank: 'Newbie',
+  ccRating: 1424,
   ccStars: '2★',
   activeDays: 0,
   totalSolvesYear: 0
@@ -678,91 +678,91 @@ async function refreshCodeforces() {
 }
 
 async function refreshCodeChef() {
-  let ratingOK = false, starsOK = false, heatOK = false;
+  const got = { rating: false, stars: false, solved: false, heat: false };
 
-  // Primary: community CodeChef API — rating, stars and activity heatmap.
-  const apiReq = fetchJSON('https://codechef-api.vercel.app/handle/' + HANDLES.cc, 15000)
-    .then(d => {
-      if (!d || d.success === false) return;
-      const rating = posInt(d.currentRating);
-      if (rating) {
-        ratingOK = true;
-        statsData.ccRating = rating;
-        setText('cc-rating', rating);
-        saveStatsCache('cc', { rating: rating });
-      }
-      if (typeof d.stars === 'string' && d.stars.trim()) {
-        starsOK = true;
-        statsData.ccStars = d.stars.trim();
-        setText('cc-rank', statsData.ccStars);
-        saveStatsCache('cc', { stars: statsData.ccStars });
-      }
-      if (Array.isArray(d.heatMap)) {
-        const map = {};
-        d.heatMap.forEach(pt => {
-          if (!pt || typeof pt.date !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(pt.date)) return;
-          const n = Number(pt.value);
-          if (n > 0) {
-            const day = pt.date.slice(0, 10);
-            map[day] = (map[day] || 0) + n;
-          }
-        });
-        if (Object.keys(map).length) {
-          heatOK = true;
-          liveDays.cc = map;
-          saveStatsCache('cc', { days: map });
-        }
-      }
-    })
-    .catch(e => console.log('CodeChef API:', e.message));
-
-  // The solved count isn't in that API — read "Total Problems Solved" off the
-  // public profile page via CORS-friendly mirrors (also a rating/stars backup).
-  const pageReq = (async () => {
-    const target = encodeURIComponent('https://www.codechef.com/users/' + HANDLES.cc);
-    const mirrors = [
-      'https://api.allorigins.win/raw?url=' + target,
-      'https://api.codetabs.com/v1/proxy?quest=' + target,
-    ];
-    for (let i = 0; i < mirrors.length; i++) {
-      try {
-        const html = await fetchText(mirrors[i], 15000);
-        if (!/Total Problems Solved|rating-number/i.test(html)) continue; // mirror junk
-        const solvedM = html.match(/Total Problems Solved:\s*([\d,]+)/i);
-        const ratingM = html.match(/class="rating-number"[^>]*>\s*(\d+)/);
-        const starsM = html.match(/class="rating"[^>]*>\s*(\d)\s*★/);
-        return {
-          solved: solvedM ? posInt(solvedM[1].replace(/,/g, '')) : null,
-          rating: ratingM ? posInt(ratingM[1]) : null,
-          stars: starsM ? starsM[1] + '★' : null,
-        };
-      } catch (e) { console.log('CodeChef profile mirror:', e.message); }
+  // Apply whichever fields a source managed to provide; earlier (more
+  // reliable) sources win per field, later ones only fill gaps.
+  const applyCC = (src) => {
+    if (!src) return;
+    const rating = posInt(src.rating !== undefined ? src.rating : src.currentRating);
+    if (!got.rating && rating) {
+      got.rating = true;
+      statsData.ccRating = rating;
+      setText('cc-rating', rating);
+      saveStatsCache('cc', { rating: rating });
     }
-    return null;
-  })();
-
-  await apiReq;
-  const page = await pageReq;
-  if (page) {
-    if (page.solved) {
-      statsData.ccSolved = page.solved;
-      updateDonut('cc-donut-fill', 'cc-solved-donut', page.solved, 300);
+    const stars = (typeof src.stars === 'string' && src.stars.trim()) ? src.stars.trim() : null;
+    if (!got.stars && stars) {
+      got.stars = true;
+      statsData.ccStars = stars;
+      setText('cc-rank', stars);
+      saveStatsCache('cc', { stars: stars });
+    }
+    const solved = posInt(src.solved);
+    if (!got.solved && solved) {
+      got.solved = true;
+      statsData.ccSolved = solved;
+      updateDonut('cc-donut-fill', 'cc-solved-donut', solved, 300);
       updateTotalSolved();
-      saveStatsCache('cc', { solved: page.solved });
+      saveStatsCache('cc', { solved: solved });
     }
-    if (!ratingOK && page.rating) {
-      statsData.ccRating = page.rating;
-      setText('cc-rating', page.rating);
-      saveStatsCache('cc', { rating: page.rating });
+    if (!got.heat && Array.isArray(src.heatMap)) {
+      const map = {};
+      src.heatMap.forEach(pt => {
+        if (!pt || typeof pt.date !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(pt.date)) return;
+        const n = Number(pt.value !== undefined ? pt.value : pt.count);
+        if (n > 0) {
+          const day = pt.date.slice(0, 10);
+          map[day] = (map[day] || 0) + n;
+        }
+      });
+      if (Object.keys(map).length) {
+        got.heat = true;
+        liveDays.cc = map;
+        saveStatsCache('cc', { days: map });
+      }
     }
-    if (!starsOK && page.stars) {
-      statsData.ccStars = page.stars;
-      setText('cc-rank', page.stars);
-      saveStatsCache('cc', { stars: page.stars });
+  };
+
+  // Source 1: this site's own serverless mirror (api/codechef.js, deployed by
+  // Vercel alongside the page) — same origin, no third parties involved.
+  try {
+    applyCC(await fetchJSON('/api/codechef?handle=' + HANDLES.cc, 15000));
+  } catch (e) { console.log('CodeChef own API:', e.message); }
+
+  // Source 2: community CodeChef API — rating, stars and activity heatmap.
+  if (!got.rating || !got.stars || !got.heat) {
+    try {
+      const d = await fetchJSON('https://codechef-api.vercel.app/handle/' + HANDLES.cc, 20000);
+      if (d && d.success !== false) applyCC(d);
+    } catch (e) { console.log('CodeChef community API:', e.message); }
+  }
+
+  // Source 3: the public profile page through CORS-friendly mirrors.
+  if (!got.solved || !got.rating) {
+    const target = 'https://www.codechef.com/users/' + HANDLES.cc;
+    const mirrors = [
+      'https://api.allorigins.win/raw?url=' + encodeURIComponent(target),
+      'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(target),
+      'https://r.jina.ai/' + target,
+    ];
+    for (let i = 0; i < mirrors.length && (!got.solved || !got.rating); i++) {
+      try {
+        const html = await fetchText(mirrors[i], 20000);
+        if (!/Total\s+Problems\s+Solved|rating-number/i.test(html)) continue; // mirror junk
+        const solvedM = html.match(/Total\s+Problems\s+Solved\s*:?\s*([\d,]+)/i);
+        const ratingM = html.match(/class="rating-number"[^>]*>\s*([\d,]+)/);
+        const starsM = html.match(/class="rating"[^>]*>\s*(\d)\s*★/);
+        applyCC({
+          solved: solvedM ? solvedM[1].replace(/,/g, '') : undefined,
+          rating: ratingM ? ratingM[1].replace(/,/g, '') : undefined,
+          stars: starsM ? starsM[1] + '★' : undefined,
+        });
+      } catch (e) { console.log('CodeChef mirror:', e.message); }
     }
   }
 
-  sourceState.cc = heatOK ? 'live' : 'failed';
+  sourceState.cc = got.heat ? 'live' : 'failed';
   scheduleHeatmapRender();
 }
 

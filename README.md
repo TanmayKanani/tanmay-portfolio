@@ -51,6 +51,7 @@ python -m http.server 8000
 ├── index.html                 # markup
 ├── style.css                  # styles & responsive design
 ├── script.js                  # interactions, live stats, heatmap, contact form
+├── api/codechef.js            # Vercel serverless mirror for CodeChef stats
 ├── Tanmay_Kanani_Resume.pdf   # résumé
 └── assets/                    # preview images
 ```
