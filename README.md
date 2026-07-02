@@ -16,9 +16,10 @@ HTML, CSS, and vanilla JavaScript. No framework, no build step.
 
 ## ✨ Highlights
 
-- **Live coding stats** — LeetCode & Codeforces solved counts and ratings, plus a
-  merged GitHub-style **activity heatmap**, fetched client-side with resilient
-  fallbacks so the section never looks broken.
+- **Live coding stats** — LeetCode, Codeforces & CodeChef solved counts, ratings
+  and stars, plus a merged GitHub-style **activity heatmap** — fetched live
+  client-side, auto-refreshed while the page is open, and backed by a cache of
+  the last real values (never fabricated numbers) when an API is down.
 - **Motion & interaction** — a cinematic intro preloader, a GSAP hero reveal,
   scroll-parallax headings, a velocity-reactive marquee, magnetic buttons, an
   interactive particle field, and hover "scramble" text.

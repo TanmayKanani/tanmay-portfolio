@@ -362,30 +362,30 @@ function initDonutCharts() {
   const circumference = 2 * Math.PI * 50; // r=50 → ~314.16
 
   donuts.forEach(circle => {
-    const value = parseFloat(circle.getAttribute('data-value')) || 0;
-    const max = parseFloat(circle.getAttribute('data-max')) || 1;
-    const targetOffset = circumference * (1 - value / max);
-
     circle.style.strokeDasharray = circumference;
     circle.style.strokeDashoffset = circumference; // fully hidden initially
+
+    // Read data-value/data-max at reveal time, not at page load — live data
+    // may already have updated them, and animating to a value captured
+    // earlier would revert the ring to the stale number.
+    const reveal = () => {
+      circle.dataset.revealed = '1';
+      const value = parseFloat(circle.getAttribute('data-value')) || 0;
+      const max = parseFloat(circle.getAttribute('data-max')) || 1;
+      const targetOffset = circumference * (1 - Math.min(value / max, 1));
+      if (typeof gsap !== 'undefined') {
+        gsap.to(circle, { strokeDashoffset: targetOffset, duration: 1.8, ease: 'power3.out', delay: 0.15 });
+      } else {
+        circle.style.strokeDashoffset = targetOffset;
+      }
+    };
 
     // Animate when scrolling into view
     const card = circle.closest('.platform-card');
     if (card && typeof ScrollTrigger !== 'undefined') {
-      ScrollTrigger.create({
-        trigger: card,
-        start: 'top 85%',
-        once: true,
-        onEnter: () => {
-          if (typeof gsap !== 'undefined') {
-            gsap.to(circle, { strokeDashoffset: targetOffset, duration: 1.8, ease: 'power3.out', delay: 0.15 });
-          } else {
-            circle.style.strokeDashoffset = targetOffset;
-          }
-        },
-      });
+      ScrollTrigger.create({ trigger: card, start: 'top 85%', once: true, onEnter: reveal });
     } else {
-      setTimeout(() => { circle.style.strokeDashoffset = targetOffset; }, 800);
+      setTimeout(reveal, 800);
     }
   });
 }
@@ -399,8 +399,12 @@ function updateDonut(circleId, textId, value, max) {
   circle.setAttribute('data-max', max);
   if (text) text.textContent = value;
 
+  // Before the scroll-in reveal only record the numbers — the reveal
+  // animation reads them and fills the ring itself.
+  if (circle.dataset.revealed !== '1') return;
+
   const circumference = 2 * Math.PI * 50;
-  const targetOffset = circumference * (1 - value / max);
+  const targetOffset = circumference * (1 - Math.min(value / max, 1));
 
   if (typeof gsap !== 'undefined') {
     gsap.to(circle, { strokeDashoffset: targetOffset, duration: 1.5, ease: 'power3.out' });
@@ -410,8 +414,12 @@ function updateDonut(circleId, textId, value, max) {
 }
 
 /* ==========================================================================
-   7. COUNTER — Total Solved
+   7. LIVE STATS DATA — handles, last-real-value cache, total counter
    ========================================================================== */
+const HANDLES = { lc: 'Tanmay_Kanani', cf: 'tanmay.k', cc: 'tanmay_kanani' };
+
+// Last-resort seeds, shown only until real data (live, or cached from a
+// previous visit) takes over. A live value ALWAYS wins once its API answers.
 const statsData = {
   lcSolved: 470,
   cfSolved: 494,
@@ -420,9 +428,42 @@ const statsData = {
   lcPercentile: 'Top 18%',
   cfRating: 1352,
   cfRank: 'Pupil',
+  ccRating: 1447,
+  ccStars: '2★',
   activeDays: 0,
   totalSolvesYear: 0
 };
+
+// The last REAL numbers each platform returned, kept in localStorage. When an
+// API is down we show these instead of the baked-in seeds — never invented data.
+const STATS_CACHE_KEY = 'tk_live_stats_v2';
+
+function loadStatsCache() {
+  try {
+    const c = JSON.parse(localStorage.getItem(STATS_CACHE_KEY) || '{}');
+    return c && typeof c === 'object' ? c : {};
+  } catch (e) { return {}; }
+}
+
+function saveStatsCache(platform, patch) {
+  try {
+    if (patch.days) patch = Object.assign({}, patch, { days: trimDayMap(patch.days) });
+    const c = loadStatsCache();
+    c[platform] = Object.assign({}, c[platform], patch, { ts: Date.now() });
+    localStorage.setItem(STATS_CACHE_KEY, JSON.stringify(c));
+  } catch (e) { /* storage blocked — live-only mode */ }
+}
+
+// Keep cached activity maps to roughly the heatmap window so the cache stays small.
+function trimDayMap(days) {
+  const out = {};
+  const cutoff = Date.now() - 380 * 86400000;
+  Object.keys(days).forEach(d => {
+    const t = Date.parse(d + 'T00:00:00Z');
+    if (isFinite(t) && t >= cutoff) out[d] = days[d];
+  });
+  return out;
+}
 
 let totalSolvedCounterTriggered = false;
 
@@ -454,245 +495,380 @@ function initCounter() {
   }
 }
 
-function updateCFAndLCStats() {
+function updateTotalSolved() {
+  const el = document.getElementById('total-solved');
+  if (!el || !totalSolvedCounterTriggered) return; // the scroll trigger paints it later
   const total = statsData.lcSolved + statsData.cfSolved + statsData.ccSolved;
-
-  // Update total solved counter
-  const totalSolvedEl = document.getElementById('total-solved');
-  if (totalSolvedEl) {
-    if (!totalSolvedCounterTriggered) {
-      // scrolltrigger will trigger it later
-    } else {
-      if (typeof gsap !== 'undefined') {
-        gsap.to(totalSolvedEl, {
-          innerText: total,
-          duration: 1.2,
-          snap: { innerText: 1 },
-          ease: 'power2.out'
-        });
-      } else {
-        totalSolvedEl.textContent = total;
-      }
-    }
+  if (typeof gsap !== 'undefined') {
+    gsap.to(el, { innerText: total, duration: 1.2, snap: { innerText: 1 }, ease: 'power2.out' });
+  } else {
+    el.textContent = total;
   }
 }
 
 /* ==========================================================================
-   8. REAL-TIME STATS: LEETCODE & CODEFORCES APIs
+   8. REAL-TIME STATS — LEETCODE, CODEFORCES & CODECHEF
+   Fetched fresh on every visit (cache: no-store) and re-fetched while the
+   page stays open, so a rating or solved-count change on any platform shows
+   up right away. A platform that fails to answer falls back to its own last
+   real cached values — a live answer always replaces what's on screen.
    ========================================================================== */
-function initLiveStats() {
-  const handleLC = 'Tanmay_Kanani';
-  const handleCF = 'tanmay.k';
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
 
-  // Immediately render fallbacks/initial states in UI
+function fetchFresh(url, ms) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), ms);
+  return fetch(url, { signal: ctl.signal, cache: 'no-store' })
+    .finally(() => clearTimeout(timer));
+}
+async function fetchJSON(url, ms) {
+  const r = await fetchFresh(url, ms);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+async function fetchText(url, ms) {
+  const r = await fetchFresh(url, ms);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.text();
+}
+
+// A stat is only accepted as a positive finite number — a glitchy API
+// response can never paint a bogus zero or NaN.
+function posInt(v) {
+  const n = Number(v);
+  return isFinite(n) && n > 0 ? Math.round(n) : null;
+}
+
+// UTC YYYY-MM-DD for a unix-seconds timestamp (matches the platforms' keys)
+function isoDayUTC(unixSeconds) {
+  return new Date(unixSeconds * 1000).toISOString().slice(0, 10);
+}
+
+// Activity maps ({ 'YYYY-MM-DD': submissions }) fetched live this session.
+const liveDays = { lc: null, cf: null, cc: null };
+// Per-platform activity fetch state, driving the heatmap sources line.
+const sourceState = { lc: 'pending', cf: 'pending', cc: 'pending' };
+
+async function refreshLeetCode() {
+  const base = 'https://alfa-leetcode-api.onrender.com/' + HANDLES.lc;
+  let solvedOK = false, calendarOK = false;
+
+  const applySolved = (n) => {
+    solvedOK = true;
+    statsData.lcSolved = n;
+    updateDonut('lc-donut-fill', 'lc-solved-donut', n, 700);
+    updateTotalSolved();
+    saveStatsCache('lc', { solved: n });
+  };
+  // LeetCode's submission calendar is { unixSeconds: count }, sometimes
+  // JSON-encoded as a string; normalize it into a per-day map.
+  const applyCalendar = (cal) => {
+    if (typeof cal === 'string') { try { cal = JSON.parse(cal); } catch (e) { return; } }
+    if (!cal || typeof cal !== 'object') return;
+    const map = {};
+    Object.keys(cal).forEach(ts => {
+      const n = Number(cal[ts]);
+      const sec = Number(ts);
+      if (n > 0 && isFinite(sec)) {
+        const d = isoDayUTC(sec);
+        map[d] = (map[d] || 0) + n;
+      }
+    });
+    if (!Object.keys(map).length) return;
+    calendarOK = true;
+    liveDays.lc = map;
+    saveStatsCache('lc', { days: map });
+  };
+
+  const results = await Promise.allSettled([
+    fetchJSON(base + '/solved', 20000).then(d => {
+      const n = posInt(d && (d.solvedProblem !== undefined ? d.solvedProblem : d.totalSolved));
+      if (n) applySolved(n);
+    }),
+    fetchJSON(base + '/contest', 20000).then(d => {
+      const rating = posInt(d && d.contestRating);
+      if (rating) {
+        statsData.lcRating = rating;
+        setText('lc-rating', rating);
+        saveStatsCache('lc', { rating: rating });
+      }
+      const pct = Number(d && d.contestTopPercentage);
+      if (isFinite(pct) && pct > 0) {
+        statsData.lcPercentile = 'Top ' + (Math.round(pct * 10) / 10) + '%';
+        setText('lc-percentile', statsData.lcPercentile);
+        saveStatsCache('lc', { pct: statsData.lcPercentile });
+      }
+    }),
+    fetchJSON(base + '/calendar', 20000).then(d => {
+      applyCalendar(d && (d.submissionCalendar
+        || (d.data && d.data.submissionCalendar)
+        || (d.data && d.data.matchedUser && d.data.matchedUser.userCalendar && d.data.matchedUser.userCalendar.submissionCalendar)));
+    }),
+  ]);
+  results.forEach(r => { if (r.status === 'rejected') console.log('LeetCode API:', r.reason && r.reason.message); });
+
+  // Backup mirror — one call covers solved + calendar if the primary is down.
+  if (!solvedOK || !calendarOK) {
+    try {
+      const d = await fetchJSON('https://leetcode-api-faisalshohag.vercel.app/' + HANDLES.lc, 15000);
+      if (!solvedOK) { const n = posInt(d && d.totalSolved); if (n) applySolved(n); }
+      if (!calendarOK && d) applyCalendar(d.submissionCalendar);
+    } catch (e) { console.log('LeetCode backup API:', e.message); }
+  }
+
+  sourceState.lc = calendarOK ? 'live' : 'failed';
+  scheduleHeatmapRender();
+}
+
+async function refreshCodeforces() {
+  try {
+    const info = await fetchJSON('https://codeforces.com/api/user.info?handles=' + HANDLES.cf, 12000);
+    if (info.status === 'OK' && Array.isArray(info.result) && info.result[0]) {
+      const u = info.result[0];
+      const rating = posInt(u.rating);
+      if (rating) {
+        statsData.cfRating = rating;
+        setText('cf-rating', rating);
+        saveStatsCache('cf', { rating: rating });
+      }
+      if (typeof u.rank === 'string' && u.rank) {
+        statsData.cfRank = u.rank.charAt(0).toUpperCase() + u.rank.slice(1);
+        saveStatsCache('cf', { rank: statsData.cfRank });
+      }
+      const rankEl = document.getElementById('cf-rank');
+      if (rankEl) {
+        rankEl.textContent = statsData.cfRank;
+        rankEl.style.color = cfColor(statsData.cfRating);
+      }
+    }
+  } catch (e) { console.log('Codeforces info API:', e.message); }
+
+  // ONE submissions call feeds both the solved donut and the heatmap —
+  // the previous two parallel identical calls could trip Codeforces'
+  // rate limiter and randomly lose one of the two.
+  try {
+    const st = await fetchJSON('https://codeforces.com/api/user.status?handle=' + HANDLES.cf, 20000);
+    if (st.status !== 'OK' || !Array.isArray(st.result)) throw new Error('bad response');
+    const solvedSet = new Set();
+    const map = {};
+    st.result.forEach(sub => {
+      if (sub.verdict === 'OK' && sub.problem) {
+        solvedSet.add(sub.problem.contestId + '-' + sub.problem.index);
+      }
+      const d = isoDayUTC(sub.creationTimeSeconds);
+      map[d] = (map[d] || 0) + 1;
+    });
+    if (solvedSet.size > 0) {
+      statsData.cfSolved = solvedSet.size;
+      updateDonut('cf-donut-fill', 'cf-solved-donut', statsData.cfSolved, 800);
+      updateTotalSolved();
+      saveStatsCache('cf', { solved: statsData.cfSolved });
+    }
+    liveDays.cf = map;
+    saveStatsCache('cf', { days: map });
+    sourceState.cf = 'live';
+  } catch (e) {
+    sourceState.cf = 'failed';
+    console.log('Codeforces submissions API:', e.message);
+  }
+  scheduleHeatmapRender();
+}
+
+async function refreshCodeChef() {
+  let ratingOK = false, starsOK = false, heatOK = false;
+
+  // Primary: community CodeChef API — rating, stars and activity heatmap.
+  const apiReq = fetchJSON('https://codechef-api.vercel.app/handle/' + HANDLES.cc, 15000)
+    .then(d => {
+      if (!d || d.success === false) return;
+      const rating = posInt(d.currentRating);
+      if (rating) {
+        ratingOK = true;
+        statsData.ccRating = rating;
+        setText('cc-rating', rating);
+        saveStatsCache('cc', { rating: rating });
+      }
+      if (typeof d.stars === 'string' && d.stars.trim()) {
+        starsOK = true;
+        statsData.ccStars = d.stars.trim();
+        setText('cc-rank', statsData.ccStars);
+        saveStatsCache('cc', { stars: statsData.ccStars });
+      }
+      if (Array.isArray(d.heatMap)) {
+        const map = {};
+        d.heatMap.forEach(pt => {
+          if (!pt || typeof pt.date !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(pt.date)) return;
+          const n = Number(pt.value);
+          if (n > 0) {
+            const day = pt.date.slice(0, 10);
+            map[day] = (map[day] || 0) + n;
+          }
+        });
+        if (Object.keys(map).length) {
+          heatOK = true;
+          liveDays.cc = map;
+          saveStatsCache('cc', { days: map });
+        }
+      }
+    })
+    .catch(e => console.log('CodeChef API:', e.message));
+
+  // The solved count isn't in that API — read "Total Problems Solved" off the
+  // public profile page via CORS-friendly mirrors (also a rating/stars backup).
+  const pageReq = (async () => {
+    const target = encodeURIComponent('https://www.codechef.com/users/' + HANDLES.cc);
+    const mirrors = [
+      'https://api.allorigins.win/raw?url=' + target,
+      'https://api.codetabs.com/v1/proxy?quest=' + target,
+    ];
+    for (let i = 0; i < mirrors.length; i++) {
+      try {
+        const html = await fetchText(mirrors[i], 15000);
+        if (!/Total Problems Solved|rating-number/i.test(html)) continue; // mirror junk
+        const solvedM = html.match(/Total Problems Solved:\s*([\d,]+)/i);
+        const ratingM = html.match(/class="rating-number"[^>]*>\s*(\d+)/);
+        const starsM = html.match(/class="rating"[^>]*>\s*(\d)\s*★/);
+        return {
+          solved: solvedM ? posInt(solvedM[1].replace(/,/g, '')) : null,
+          rating: ratingM ? posInt(ratingM[1]) : null,
+          stars: starsM ? starsM[1] + '★' : null,
+        };
+      } catch (e) { console.log('CodeChef profile mirror:', e.message); }
+    }
+    return null;
+  })();
+
+  await apiReq;
+  const page = await pageReq;
+  if (page) {
+    if (page.solved) {
+      statsData.ccSolved = page.solved;
+      updateDonut('cc-donut-fill', 'cc-solved-donut', page.solved, 300);
+      updateTotalSolved();
+      saveStatsCache('cc', { solved: page.solved });
+    }
+    if (!ratingOK && page.rating) {
+      statsData.ccRating = page.rating;
+      setText('cc-rating', page.rating);
+      saveStatsCache('cc', { rating: page.rating });
+    }
+    if (!starsOK && page.stars) {
+      statsData.ccStars = page.stars;
+      setText('cc-rank', page.stars);
+      saveStatsCache('cc', { stars: page.stars });
+    }
+  }
+
+  sourceState.cc = heatOK ? 'live' : 'failed';
+  scheduleHeatmapRender();
+}
+
+let statsRefreshing = false;
+let lastStatsRefresh = 0;
+
+async function refreshAllStats() {
+  if (statsRefreshing) return;
+  statsRefreshing = true;
+  try {
+    await Promise.allSettled([refreshLeetCode(), refreshCodeforces(), refreshCodeChef()]);
+  } finally {
+    statsRefreshing = false;
+    lastStatsRefresh = Date.now();
+    scheduleHeatmapRender();
+  }
+}
+
+function initLiveStats() {
+  // Seed the UI with the last real values from a previous visit (the baked-in
+  // seeds only apply when there's no cache yet)…
+  const c = loadStatsCache();
+  const lc = c.lc || {}, cf = c.cf || {}, cc = c.cc || {};
+  if (lc.solved) statsData.lcSolved = lc.solved;
+  if (lc.rating) statsData.lcRating = lc.rating;
+  if (lc.pct) statsData.lcPercentile = lc.pct;
+  if (cf.solved) statsData.cfSolved = cf.solved;
+  if (cf.rating) statsData.cfRating = cf.rating;
+  if (cf.rank) statsData.cfRank = cf.rank;
+  if (cc.solved) statsData.ccSolved = cc.solved;
+  if (cc.rating) statsData.ccRating = cc.rating;
+  if (cc.stars) statsData.ccStars = cc.stars;
+
   updateDonut('lc-donut-fill', 'lc-solved-donut', statsData.lcSolved, 700);
   updateDonut('cf-donut-fill', 'cf-solved-donut', statsData.cfSolved, 800);
   updateDonut('cc-donut-fill', 'cc-solved-donut', statsData.ccSolved, 300);
-
-  const cfRatingEl = document.getElementById('cf-rating');
+  setText('lc-rating', statsData.lcRating);
+  setText('lc-percentile', statsData.lcPercentile);
+  setText('cf-rating', statsData.cfRating);
+  setText('cc-rating', statsData.ccRating);
+  setText('cc-rank', statsData.ccStars);
   const cfRankEl = document.getElementById('cf-rank');
-  if (cfRatingEl) cfRatingEl.textContent = statsData.cfRating;
   if (cfRankEl) {
     cfRankEl.textContent = statsData.cfRank;
     cfRankEl.style.color = cfColor(statsData.cfRating);
   }
 
-  // 1. Fetch LeetCode Solved Stats
-  fetch(`https://alfa-leetcode-api.onrender.com/${handleLC}/solved`)
-    .then(r => r.json())
-    .then(data => {
-      const solved = data && (typeof data.solvedProblem === 'number' ? data.solvedProblem : data.totalSolved);
-      // Solved counts only grow — ignore a lower value (API hiccup) so the
-      // donut never drops below the known total.
-      if (typeof solved === 'number' && solved >= statsData.lcSolved) {
-        statsData.lcSolved = solved;
-        updateDonut('lc-donut-fill', 'lc-solved-donut', statsData.lcSolved, 700);
-        updateCFAndLCStats();
-      }
-    })
-    .catch(err => console.log('LeetCode Solved API Error, using fallback:', err));
-
-  // 2. Fetch LeetCode Contest Rating
-  fetch(`https://alfa-leetcode-api.onrender.com/${handleLC}/contest`)
-    .then(r => r.json())
-    .then(data => {
-      if (data && data.contestRating) {
-        statsData.lcRating = Math.round(data.contestRating);
-        const ratEl = document.getElementById('lc-rating');
-        if (ratEl) ratEl.textContent = statsData.lcRating;
-      }
-      if (data && data.contestTopPercentage) {
-        statsData.lcPercentile = `Top ${data.contestTopPercentage}%`;
-        const pctEl = document.getElementById('lc-percentile');
-        if (pctEl) pctEl.textContent = statsData.lcPercentile;
-      }
-    })
-    .catch(err => console.log('LeetCode Contest API Error, using fallback:', err));
-
-  // 3. Fetch Codeforces Info
-  fetch(`https://codeforces.com/api/user.info?handles=${handleCF}`)
-    .then(r => r.json())
-    .then(data => {
-      if (data.status === 'OK' && data.result.length) {
-        const u = data.result[0];
-        statsData.cfRating = u.rating || 1352;
-        const ratEl = document.getElementById('cf-rating');
-        if (ratEl) ratEl.textContent = statsData.cfRating;
-
-        const rankEl = document.getElementById('cf-rank');
-        if (rankEl) {
-          const rank = u.rank || 'pupil';
-          rankEl.textContent = rank.charAt(0).toUpperCase() + rank.slice(1);
-          rankEl.style.color = cfColor(statsData.cfRating);
-        }
-      }
-    })
-    .catch(err => console.log('Codeforces Info API Error, using fallback:', err));
-
-  // 4. Fetch Codeforces Solved count from submissions
-  fetch(`https://codeforces.com/api/user.status?handle=${handleCF}`)
-    .then(r => r.json())
-    .then(data => {
-      if (data.status === 'OK' && data.result.length) {
-        const solved = new Set();
-        data.result.forEach(sub => {
-          if (sub.verdict === 'OK') {
-            const problemId = sub.problem.contestId + '-' + sub.problem.index;
-            solved.add(problemId);
-          }
-        });
-        if (solved.size >= statsData.cfSolved) {
-          statsData.cfSolved = solved.size;
-          updateDonut('cf-donut-fill', 'cf-solved-donut', statsData.cfSolved, 800);
-          updateCFAndLCStats();
-        }
-      }
-    })
-    .catch(err => console.log('Codeforces Solved API Error, using fallback:', err));
+  // …then fetch live values now, and keep them fresh while the page is open.
+  refreshAllStats();
+  setInterval(refreshAllStats, 10 * 60 * 1000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && Date.now() - lastStatsRefresh > 5 * 60 * 1000) refreshAllStats();
+  });
 }
 
 function cfColor(r) { return r < 1200 ? '#808080' : r < 1400 ? '#00c853' : r < 1600 ? '#03a9f4' : r < 1900 ? '#aa00ff' : '#ff8f00'; }
 
 /* ==========================================================================
-   9. HEATMAP — GitHub-style grid from REAL LeetCode + Codeforces activity
+   9. HEATMAP — GitHub-style grid of REAL LeetCode + Codeforces + CodeChef
+   activity. Each platform shows live data, or its own last real cached data
+   if its API is down. Fabricated filler is never used — if nothing has
+   loaded yet the grid stays empty and says so.
    ========================================================================== */
-const HEATMAP_HANDLES = { codeforces: 'tanmay.k', leetcode: 'Tanmay_Kanani' };
-
-// UTC YYYY-MM-DD for a unix-seconds timestamp (matches both API date keys)
-function isoDayUTC(unixSeconds) {
-  return new Date(unixSeconds * 1000).toISOString().slice(0, 10);
+// Best available activity map per platform: live this session, else cached.
+function heatmapSourceMaps() {
+  const cache = loadStatsCache();
+  const pick = (k) => liveDays[k] || (cache[k] || {}).days || null;
+  return { lc: pick('lc'), cf: pick('cf'), cc: pick('cc') };
 }
 
-function fetchWithTimeout(url, opts, ms) {
-  return Promise.race([
-    fetch(url, opts),
-    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
-  ]);
+function mergeDayMaps(maps) {
+  const merged = {};
+  let any = false;
+  Object.keys(maps).forEach(k => {
+    if (!maps[k]) return;
+    any = true;
+    Object.keys(maps[k]).forEach(d => { merged[d] = (merged[d] || 0) + maps[k][d]; });
+  });
+  return any ? merged : null;
 }
 
-// Pull real daily submission counts. Codeforces is CORS-friendly; LeetCode's
-// calendar comes via the same proxy the donuts already use. Returns a
-// { 'YYYY-MM-DD': count } map plus whether any source actually answered.
-async function fetchRealActivity() {
-  const days = {};
-  let cfLive = false, lcLive = false;
-
-  const cf = (async () => {
-    try {
-      const r = await fetchWithTimeout(
-        `https://codeforces.com/api/user.status?handle=${HEATMAP_HANDLES.codeforces}&from=1&count=100000`,
-        undefined, 9000);
-      const j = await r.json();
-      if (j.status === 'OK' && Array.isArray(j.result)) {
-        j.result.forEach(sub => {
-          const d = isoDayUTC(sub.creationTimeSeconds);
-          days[d] = (days[d] || 0) + 1;
-        });
-        cfLive = true;
-      }
-    } catch (e) { console.log('Heatmap: Codeforces activity unavailable —', e.message); }
-  })();
-
-  const lc = (async () => {
-    try {
-      const r = await fetchWithTimeout(
-        `https://alfa-leetcode-api.onrender.com/${HEATMAP_HANDLES.leetcode}/calendar`,
-        undefined, 13000);
-      const j = await r.json();
-      let cal = (j && (j.submissionCalendar
-        || (j.data && j.data.submissionCalendar)
-        || (j.data && j.data.matchedUser && j.data.matchedUser.userCalendar && j.data.matchedUser.userCalendar.submissionCalendar)));
-      if (typeof cal === 'string') cal = JSON.parse(cal);
-      if (cal && typeof cal === 'object' && Object.keys(cal).length) {
-        Object.entries(cal).forEach(([ts, count]) => {
-          const d = isoDayUTC(Number(ts));
-          days[d] = (days[d] || 0) + Number(count);
-        });
-        lcLive = true;
-      }
-    } catch (e) { console.log('Heatmap: LeetCode activity unavailable —', e.message); }
-  })();
-
-  await Promise.allSettled([cf, lc]);
-  return { days, cfLive, lcLive };
+function heatmapSourcesLabel(maps) {
+  const names = { lc: 'LeetCode', cf: 'Codeforces', cc: 'CodeChef' };
+  return ['lc', 'cf', 'cc'].map(k => {
+    if (sourceState[k] === 'live') return names[k] + ': live';
+    if (sourceState[k] === 'pending') return names[k] + ': syncing…';
+    return names[k] + ': ' + (maps[k] ? 'cached' : 'unavailable');
+  }).join(' · ');
 }
 
-// Quick activity check over the visible 52-week window — used to decide whether
-// live data is healthy enough to replace the curated baseline.
-function windowStats(daysMap) {
-  const MS_DAY = 86400000;
-  const t = new Date();
-  const endUTC = Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate());
-  const back = endUTC - 7 * 51 * MS_DAY;
-  const startUTC = back - new Date(back).getUTCDay() * MS_DAY;
-  const counts = [];
-  let active = 0;
-  for (let ms = startUTC; ms <= endUTC; ms += MS_DAY) {
-    const c = daysMap[new Date(ms).toISOString().slice(0, 10)] || 0;
-    counts.push(c);
-    if (c > 0) active++;
-  }
-  let currentStreak = 0;
-  for (let i = counts.length - 1; i >= 0 && counts[i] > 0; i--) currentStreak++;
-  return { active, currentStreak };
+let heatmapRenderTimer = null;
+function scheduleHeatmapRender() {
+  clearTimeout(heatmapRenderTimer);
+  heatmapRenderTimer = setTimeout(renderHeatmapFromSources, 250);
 }
 
-// Deterministic fallback activity (so the grid is never empty if every API is
-// down). Keyed by UTC date, with a recent ~100-day streak.
-function fallbackActivity() {
-  const MS_DAY = 86400000;
-  const t = new Date();
-  const endUTC = Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate());
-  const rand = (s) => { const x = Math.sin(s * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); };
-  const STREAK = 100;
-  const map = {};
-  for (let i = 0; i < 372; i++) {
-    const d = new Date(endUTC - i * MS_DAY);
-    const dow = d.getUTCDay();
-    const r = rand(i + 1);
-    let n;
-    if (i < STREAK) {
-      // recent 100 days: always active (the current streak)
-      const weekend = dow === 0 || dow === 6;
-      n = (weekend ? 1 : 2) + Math.floor(rand(i * 1.3 + 7) * (weekend ? 4 : 6));
-    } else if (i === STREAK) {
-      // a single rest day that caps the current streak at exactly 100
-      n = 0;
-    } else {
-      // older history: very active (~90% of days) to reflect 300+ active days
-      if (r > 0.9) n = 0;
-      else if (r > 0.62) n = 1 + Math.floor(rand(i * 2.1) * 2);
-      else if (r > 0.34) n = 3 + Math.floor(rand(i * 3.7) * 2);
-      else if (r > 0.12) n = 5 + Math.floor(rand(i * 4.3) * 2);
-      else n = 7 + Math.floor(rand(i * 5.9) * 5);
-    }
-    if (n > 0) map[d.toISOString().slice(0, 10)] = n;
-  }
-  return map;
+function renderHeatmapFromSources() {
+  if (!document.getElementById('heatmap-grid')) return;
+  const maps = heatmapSourceMaps();
+  const merged = mergeDayMaps(maps);
+  setText('heatmap-sources', heatmapSourcesLabel(maps));
+  renderHeatmap(merged || {}, !!merged);
 }
 
 // Render the grid + stats from a { 'YYYY-MM-DD': count } map.
-function renderHeatmap(daysMap) {
+function renderHeatmap(daysMap, hasData) {
   const grid = document.getElementById('heatmap-grid');
   const monthsRow = document.getElementById('heatmap-months');
   if (!grid || !monthsRow) return;
@@ -721,15 +897,25 @@ function renderHeatmap(daysMap) {
     if (d.count > 0) { active++; run++; if (run > maxStreak) maxStreak = run; }
     else run = 0;
   });
+  // Current streak counts back from today — or from yesterday when today has
+  // no submissions yet, because a day that isn't over can't break the streak.
   let currentStreak = 0;
-  for (let i = days.length - 1; i >= 0 && days[i].count > 0; i--) currentStreak++;
+  let idx = days.length - 1;
+  if (idx >= 0 && days[idx].count === 0) idx--;
+  for (; idx >= 0 && days[idx].count > 0; idx--) currentStreak++;
 
-  countTo('heatmap-total-solves', total);
-  countTo('heatmap-max-streak', maxStreak);
-  countTo('heatmap-current-streak', currentStreak);
-  countTo('heatmap-active-days', active);
-  statsData.activeDays = active;
-  statsData.totalSolvesYear = total;
+  if (hasData) {
+    countTo('heatmap-total-solves', total);
+    countTo('heatmap-max-streak', maxStreak);
+    countTo('heatmap-current-streak', currentStreak);
+    countTo('heatmap-active-days', active);
+    statsData.activeDays = active;
+    statsData.totalSolvesYear = total;
+  } else {
+    // Nothing real to show yet — say so instead of inventing numbers.
+    ['heatmap-total-solves', 'heatmap-max-streak', 'heatmap-current-streak', 'heatmap-active-days']
+      .forEach(id => setText(id, '—'));
+  }
 
   // Level buckets scaled to the user's own busiest day (GitHub-style)
   const level = (c) => {
@@ -774,7 +960,9 @@ function renderHeatmap(daysMap) {
       } else {
         el.dataset.level = level(cell.count);
         const ds = cell.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-        el.title = (cell.count === 0 ? 'No activity' : `${cell.count} ${cell.count === 1 ? 'submission' : 'submissions'} · LC & CF`) + ' — ' + ds;
+        el.title = hasData
+          ? (cell.count === 0 ? 'No submissions' : cell.count + (cell.count === 1 ? ' submission' : ' submissions')) + ' — ' + ds
+          : ds;
       }
       grid.appendChild(el);
     });
@@ -782,21 +970,9 @@ function renderHeatmap(daysMap) {
 }
 
 function initHeatmap() {
-  if (!document.getElementById('heatmap-grid')) return;
-  // 1) Paint immediately with the curated baseline (full year + ~100-day
-  //    streak) so the grid always looks right.
-  renderHeatmap(fallbackActivity());
-  // 2) Upgrade to live data ONLY when it's trustworthy. LeetCode is the main
-  //    platform, so if its calendar didn't load we keep the baseline — a
-  //    Codeforces-only result would wipe LeetCode off the grid and zero the
-  //    streak. We also require the live data to actually look active.
-  fetchRealActivity()
-    .then(({ days, lcLive }) => {
-      if (!lcLive) return;
-      const s = windowStats(days);
-      if (s.active >= 50 && s.currentStreak >= 1) renderHeatmap(days);
-    })
-    .catch(() => { /* keep the baseline */ });
+  // Instant paint from the last real data (repeat visits render immediately);
+  // the live fetches kicked off by initLiveStats() upgrade it as they answer.
+  renderHeatmapFromSources();
 }
 
 // Smooth count-up for the stat numbers; animates from the current value so the

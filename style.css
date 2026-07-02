@@ -834,6 +834,19 @@ body.nav-open .nav-hamburger span:nth-child(3) { transform: rotate(-45deg) trans
   align-items: center;
   gap: 8px;
 }
+.heatmap-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.heatmap-sources {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--text-dimmer);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin: 0;
+}
 
 .heatmap-stats {
   display: flex;
