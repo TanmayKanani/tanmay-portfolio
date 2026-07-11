@@ -1195,7 +1195,6 @@ function initQuoteBand() {
     { text: 'Pressure is a privilege.', by: 'Billie Jean King' },
     { text: 'Keep learning until the “L” goes silent.', by: null },
     { text: 'The real competition is with yourself.', by: null },
-    { text: 'Talk is cheap. Show me the code.', by: 'Linus Torvalds' },
     { text: 'Motivation gets you started. Habit keeps you going.', by: null },
   ];
 
