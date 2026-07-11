@@ -648,6 +648,23 @@ body.nav-open .nav-hamburger span:nth-child(3) { transform: rotate(-45deg) trans
 }
 
 /* ==========================================================================
+   SCROLL PROGRESS BAR
+   ========================================================================== */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), #f6e27a);
+  box-shadow: 0 0 10px rgba(232, 197, 71, 0.35);
+  transform: scaleX(0);
+  transform-origin: left;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+/* ==========================================================================
    QUOTE BAND — rotating motivation
    ========================================================================== */
 .quote-band {
@@ -1131,7 +1148,17 @@ body.nav-open .nav-hamburger span:nth-child(3) { transform: rotate(-45deg) trans
   position: absolute;
   top: 0; bottom: 0; left: 15px;
   width: 1px;
-  background: linear-gradient(to bottom, var(--accent), var(--border), transparent);
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.14), var(--border), transparent);
+}
+/* Gold line that draws itself in as you scroll (height set by JS) */
+.timeline::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 15px;
+  width: 1px;
+  height: var(--tl-progress, 0%);
+  background: linear-gradient(to bottom, var(--accent), rgba(232, 197, 71, 0.45));
+  box-shadow: 0 0 12px rgba(232, 197, 71, 0.4);
 }
 .timeline-item { position: relative; margin-bottom: 2.8rem; }
 .timeline-item:last-child { margin-bottom: 0; }
@@ -1141,9 +1168,14 @@ body.nav-open .nav-hamburger span:nth-child(3) { transform: rotate(-45deg) trans
   left: -45px; top: 10px;
   width: 11px; height: 11px;
   border-radius: 50%;
+  background: #3c3c3c;
+  transform: translateX(10px) scale(0.8);
+  transition: background 0.45s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.timeline-item.tl-active .timeline-dot {
   background: var(--accent);
   box-shadow: 0 0 15px rgba(232, 197, 71, 0.4);
-  transform: translateX(10px);
+  transform: translateX(10px) scale(1);
   animation: dotPulse 2.5s ease-in-out infinite;
 }
 @keyframes dotPulse {
@@ -1299,7 +1331,9 @@ a.contact-row:hover i { transform: scale(1.2); }
   .about-cards { grid-template-columns: 1fr; gap: 1rem; }
   .timeline { padding-left: 35px; }
   .timeline::before { left: 10px; }
-  .timeline-dot { left: -35px; transform: translateX(5px); }
+  .timeline::after { left: 10px; }
+  .timeline-dot { left: -35px; transform: translateX(5px) scale(0.8); }
+  .timeline-item.tl-active .timeline-dot { transform: translateX(5px) scale(1); }
 }
 
 @media (max-width: 480px) {

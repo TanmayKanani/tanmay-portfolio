@@ -27,6 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initParticles();
     initCursorSpotlight();
     initClickRipple();
+    initScrollProgress();
+    initTimelineDraw();
   });
 });
 
@@ -1557,7 +1559,55 @@ function initCursorSpotlight() {
 }
 
 /* ==========================================================================
-   17. CLICK RIPPLE — Gold ring expands from any click point
+   17. SCROLL PROGRESS BAR — thin gold line tracking page position
+   ========================================================================== */
+function initScrollProgress() {
+  const bar = document.getElementById('scroll-progress');
+  if (!bar) return;
+  let ticking = false;
+  const update = () => {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.transform = 'scaleX(' + (max > 0 ? Math.min(window.scrollY / max, 1) : 0) + ')';
+    ticking = false;
+  };
+  window.addEventListener('scroll', () => {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+}
+
+/* ==========================================================================
+   18. TIMELINE DRAW-IN — the milestones line draws itself as you scroll,
+   lighting up each dot as it passes.
+   ========================================================================== */
+function initTimelineDraw() {
+  const tl = document.querySelector('.timeline');
+  if (!tl) return;
+  const items = tl.querySelectorAll('.timeline-item');
+  let ticking = false;
+
+  const update = () => {
+    const rect = tl.getBoundingClientRect();
+    const marker = window.innerHeight * 0.72; // activation point down the viewport
+    const p = Math.min(1, Math.max(0, (marker - rect.top) / rect.height));
+    tl.style.setProperty('--tl-progress', (p * 100) + '%');
+    items.forEach(item => {
+      // each dot sits ~10px below its item's top edge
+      item.classList.toggle('tl-active', item.getBoundingClientRect().top + 10 < marker);
+    });
+    ticking = false;
+  };
+
+  window.addEventListener('scroll', () => {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+}
+
+/* ==========================================================================
+   19. CLICK RIPPLE — Gold ring expands from any click point
    ========================================================================== */
 function initClickRipple() {
   document.addEventListener('click', e => {
