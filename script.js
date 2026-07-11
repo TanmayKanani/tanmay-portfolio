@@ -3,6 +3,10 @@
    More responsive · More alive · More wow
    ========================================================================== */
 
+// Respect the OS-level reduced-motion accessibility setting in every
+// JS-driven animation (CSS animations are quieted in style.css).
+const REDUCED_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
 document.addEventListener('DOMContentLoaded', () => {
   // Wait a tiny moment for GSAP deferred scripts to be ready
   requestAnimationFrame(() => {
@@ -76,6 +80,9 @@ function initCursor() {
 function initHeroLetters() {
   const letters = document.querySelectorAll('#hero-name .letter');
   if (!letters.length) return;
+
+  // Reduced motion: letters are already visible via CSS — skip the flight
+  if (REDUCED_MOTION) return;
 
   // If GSAP not loaded, letters are already visible via CSS — do nothing
   if (typeof gsap === 'undefined') return;
@@ -310,6 +317,15 @@ function initScrollReveal() {
   const elements = document.querySelectorAll('.reveal-up');
   if (!elements.length) return;
 
+  // Reduced motion: content appears in place, no slide/fade choreography
+  if (REDUCED_MOTION) {
+    elements.forEach(el => {
+      el.style.opacity = '1';
+      el.style.transform = 'none';
+    });
+    return;
+  }
+
   // Safety fallback: if GSAP doesn't work, force everything visible after 3s
   const safetyTimer = setTimeout(() => {
     elements.forEach(el => {
@@ -376,7 +392,7 @@ function initDonutCharts() {
       const value = parseFloat(circle.getAttribute('data-value')) || 0;
       const max = parseFloat(circle.getAttribute('data-max')) || 1;
       const targetOffset = circumference * (1 - Math.min(value / max, 1));
-      if (typeof gsap !== 'undefined') {
+      if (typeof gsap !== 'undefined' && !REDUCED_MOTION) {
         gsap.to(circle, { strokeDashoffset: targetOffset, duration: 1.8, ease: 'power3.out', delay: 0.15 });
       } else {
         circle.style.strokeDashoffset = targetOffset;
@@ -409,7 +425,7 @@ function updateDonut(circleId, textId, value, max) {
   const circumference = 2 * Math.PI * 50;
   const targetOffset = circumference * (1 - Math.min(value / max, 1));
 
-  if (typeof gsap !== 'undefined') {
+  if (typeof gsap !== 'undefined' && !REDUCED_MOTION) {
     gsap.to(circle, { strokeDashoffset: targetOffset, duration: 1.5, ease: 'power3.out' });
   } else {
     circle.style.strokeDashoffset = targetOffset;
@@ -478,6 +494,7 @@ function initCounter() {
     if (totalSolvedCounterTriggered) return;
     totalSolvedCounterTriggered = true;
     const target = statsData.lcSolved + statsData.cfSolved + statsData.ccSolved;
+    if (REDUCED_MOTION) { el.textContent = target; return; }
     const duration = 2200;
     const start = performance.now();
 
@@ -502,7 +519,7 @@ function updateTotalSolved() {
   const el = document.getElementById('total-solved');
   if (!el || !totalSolvedCounterTriggered) return; // the scroll trigger paints it later
   const total = statsData.lcSolved + statsData.cfSolved + statsData.ccSolved;
-  if (typeof gsap !== 'undefined') {
+  if (typeof gsap !== 'undefined' && !REDUCED_MOTION) {
     gsap.to(el, { innerText: total, duration: 1.2, snap: { innerText: 1 }, ease: 'power2.out' });
   } else {
     el.textContent = total;
@@ -985,6 +1002,7 @@ function countTo(id, target) {
   if (!el) return;
   const token = (parseInt(el.dataset.ctToken || '0', 10) + 1);
   el.dataset.ctToken = String(token);
+  if (REDUCED_MOTION) { el.textContent = target.toLocaleString(); return; }
   const startVal = parseInt((el.textContent || '0').replace(/[^0-9-]/g, ''), 10) || 0;
   const dur = 1400, t0 = performance.now();
   (function step(now) {
@@ -1042,7 +1060,7 @@ function initMagnetic() {
    ========================================================================== */
 function initOrbParallax() {
   const orbs = document.querySelectorAll('.orb');
-  if (!orbs.length) return;
+  if (!orbs.length || REDUCED_MOTION) return;
 
   const mults = [{ x: -18, y: -12 }, { x: 14, y: 18 }, { x: -10, y: 14 }];
 
@@ -1065,6 +1083,9 @@ function initOrbParallax() {
    13. TEXT SCRAMBLE — Section labels scramble on scroll into view
    ========================================================================== */
 function initTextScramble() {
+  // Reduced motion: leave every label as plain, stable text
+  if (REDUCED_MOTION) return;
+
   // Glitchy, code-like glyphs (lots of underscores so it reads like decoding)
   const chars = '!<>-_\\/[]{}—=+*^?#________';
 
@@ -1200,7 +1221,6 @@ function initQuoteBand() {
     { text: 'Motivation gets you started. Habit keeps you going.', by: null },
   ];
 
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const CHARS = '!<>-_\\/[]{}—=+*^?#________';
   let idx = 0, rotateTimer = null, decodeTimer = null, inView = false;
 
@@ -1209,10 +1229,14 @@ function initQuoteBand() {
     const q = QUOTES[idx];
     attrEl.textContent = q.by ? '— ' + q.by : '';
     if (dotsEl) {
-      [].forEach.call(dotsEl.children, (d, j) => d.classList.toggle('active', j === idx));
+      [].forEach.call(dotsEl.children, (d, j) => {
+        d.classList.toggle('active', j === idx);
+        if (j === idx) d.setAttribute('aria-current', 'true');
+        else d.removeAttribute('aria-current');
+      });
     }
     if (decodeTimer) { clearInterval(decodeTimer); decodeTimer = null; }
-    if (!decode || reduced) { textEl.textContent = q.text; return; }
+    if (!decode || REDUCED_MOTION) { textEl.textContent = q.text; return; }
 
     // Decode in ~1s regardless of quote length
     const target = q.text;
@@ -1407,6 +1431,7 @@ function initSmoothHoverLinks() {
 function initParticles() {
   const canvas = document.getElementById('particle-canvas');
   if (!canvas) return;
+  if (REDUCED_MOTION) { canvas.style.display = 'none'; return; }
 
   const ctx = canvas.getContext('2d');
   // Runs on mobile too (lighter): particles drift on their own and react to
@@ -1610,6 +1635,7 @@ function initTimelineDraw() {
    19. CLICK RIPPLE — Gold ring expands from any click point
    ========================================================================== */
 function initClickRipple() {
+  if (REDUCED_MOTION) return;
   document.addEventListener('click', e => {
     const ripple = document.createElement('div');
     ripple.className = 'click-ripple';

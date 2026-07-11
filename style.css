@@ -1345,6 +1345,18 @@ a.contact-row:hover i { transform: scale(1.2); }
 }
 
 /* ==========================================================================
+   REDUCED MOTION — honor the OS accessibility setting
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==========================================================================
    INTERACTIVE PARTICLE CANVAS — fills empty space with life
    ========================================================================== */
 #particle-canvas {
