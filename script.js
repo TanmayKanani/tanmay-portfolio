@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initTextScramble();
     initParallaxWords();
     initMarquee();
+    initQuoteBand();
     initContactForm();
     initSmoothHoverLinks();
     initParticles();
@@ -1181,7 +1182,84 @@ function initMarquee() {
 }
 
 /* ==========================================================================
-   13d. CONTACT FORM — real submission (Formspree if configured, else email)
+   13d. QUOTE BAND — rotating motivational quotes with a decode effect
+   ========================================================================== */
+function initQuoteBand() {
+  const textEl = document.getElementById('quote-text');
+  const attrEl = document.getElementById('quote-attr');
+  const dotsEl = document.getElementById('quote-dots');
+  const band = document.getElementById('quote-band');
+  if (!textEl || !attrEl || !band) return;
+
+  const QUOTES = [
+    { text: 'Pressure is a privilege.', by: 'Billie Jean King' },
+    { text: 'Keep learning until the “L” goes silent.', by: null },
+    { text: 'The real competition is with yourself.', by: null },
+    { text: 'Talk is cheap. Show me the code.', by: 'Linus Torvalds' },
+    { text: 'Motivation gets you started. Habit keeps you going.', by: null },
+  ];
+
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const CHARS = '!<>-_\\/[]{}—=+*^?#________';
+  let idx = 0, rotateTimer = null, decodeTimer = null, inView = false;
+
+  function show(i, decode) {
+    idx = ((i % QUOTES.length) + QUOTES.length) % QUOTES.length;
+    const q = QUOTES[idx];
+    attrEl.textContent = q.by ? '— ' + q.by : '';
+    if (dotsEl) {
+      [].forEach.call(dotsEl.children, (d, j) => d.classList.toggle('active', j === idx));
+    }
+    if (decodeTimer) { clearInterval(decodeTimer); decodeTimer = null; }
+    if (!decode || reduced) { textEl.textContent = q.text; return; }
+
+    // Decode in ~1s regardless of quote length
+    const target = q.text;
+    const step = Math.max(1, Math.round(target.length / 28));
+    let it = 0;
+    decodeTimer = setInterval(() => {
+      textEl.textContent = target.split('').map((ch, k) => {
+        if (ch === ' ') return ' ';
+        if (k < it) return target[k];
+        return CHARS[Math.floor(Math.random() * CHARS.length)];
+      }).join('');
+      it += step;
+      if (it >= target.length) {
+        textEl.textContent = target;
+        clearInterval(decodeTimer);
+        decodeTimer = null;
+      }
+    }, 35);
+  }
+
+  function schedule() {
+    clearInterval(rotateTimer);
+    rotateTimer = setInterval(() => { if (inView) show(idx + 1, true); }, 7000);
+  }
+
+  if (dotsEl) {
+    QUOTES.forEach((q, j) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('aria-label', 'Show quote ' + (j + 1) + ' of ' + QUOTES.length);
+      b.addEventListener('click', () => { show(j, true); schedule(); });
+      dotsEl.appendChild(b);
+    });
+  }
+
+  // Rotate only while the band is on screen
+  if (typeof IntersectionObserver !== 'undefined') {
+    new IntersectionObserver((entries) => { inView = entries[0].isIntersecting; }, { threshold: 0.25 }).observe(band);
+  } else {
+    inView = true;
+  }
+
+  show(0, false);
+  schedule();
+}
+
+/* ==========================================================================
+   13e. CONTACT FORM — real submission (Formspree if configured, else email)
    ========================================================================== */
 function initContactForm() {
   const form = document.getElementById('contact-form');
