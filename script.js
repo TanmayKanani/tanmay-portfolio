@@ -1389,11 +1389,12 @@ function initSmoothHoverLinks() {
     });
   });
 
-  // Contact social icon bounce
+  // Contact social icon bounce (icon-font <i> or inline brand <svg>)
   document.querySelectorAll('.contact-socials a').forEach(link => {
     link.addEventListener('mouseenter', () => {
-      if (typeof gsap !== 'undefined') {
-        gsap.fromTo(link.querySelector('i'), { rotation: 0 }, { rotation: 360, duration: 0.5, ease: 'power2.out' });
+      const icon = link.querySelector('i, svg');
+      if (icon && typeof gsap !== 'undefined' && !REDUCED_MOTION) {
+        gsap.fromTo(icon, { rotation: 0 }, { rotation: 360, duration: 0.5, ease: 'power2.out' });
       }
     });
   });

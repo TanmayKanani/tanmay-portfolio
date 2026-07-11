@@ -1234,6 +1234,12 @@ a.contact-row:hover i { transform: scale(1.2); }
   transform: translateY(-5px) rotate(-5deg);
   box-shadow: 0 8px 25px rgba(232, 197, 71, 0.2);
 }
+/* Inline brand logos (LeetCode, Codeforces) sized to match the icon font */
+.contact-socials a svg {
+  width: 1.1em;
+  height: 1.1em;
+  fill: currentColor;
+}
 
 /* Form */
 .contact-form { display: flex; flex-direction: column; gap: 2.2rem; }
