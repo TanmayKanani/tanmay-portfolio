@@ -144,8 +144,16 @@ module.exports = async (req, res) => {
     } catch (e) { /* nothing else to try */ }
   }
 
-  if (!data.heatMap || !data.heatMap.length) {
-    data.heatMap = await recentPromise;
+  // Union the profile heatmap with the recent-submissions scan (max per day)
+  // — the profile data has the longer history, the feed has the freshest.
+  const recent = await recentPromise;
+  if (recent) {
+    const byDate = {};
+    (data.heatMap || []).forEach((p) => {
+      if (p && p.date) byDate[p.date] = Math.max(byDate[p.date] || 0, Number(p.value) || 0);
+    });
+    recent.forEach((p) => { byDate[p.date] = Math.max(byDate[p.date] || 0, p.value); });
+    data.heatMap = Object.keys(byDate).sort().map((d) => ({ date: d, value: byDate[d] }));
   }
 
   if (data.rating == null && data.solved == null && !data.heatMap) {

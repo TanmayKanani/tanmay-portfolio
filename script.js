@@ -466,11 +466,27 @@ function loadStatsCache() {
 
 function saveStatsCache(platform, patch) {
   try {
-    if (patch.days) patch = Object.assign({}, patch, { days: trimDayMap(patch.days) });
     const c = loadStatsCache();
+    if (patch.days) {
+      // Accumulate activity history: a source with narrow coverage (e.g. a
+      // recent-submissions feed) must never wipe out fuller cached history.
+      const prev = (c[platform] || {}).days || {};
+      patch = Object.assign({}, patch, { days: trimDayMap(mergeMaxDays(prev, patch.days)) });
+    }
     c[platform] = Object.assign({}, c[platform], patch, { ts: Date.now() });
     localStorage.setItem(STATS_CACHE_KEY, JSON.stringify(c));
   } catch (e) { /* storage blocked — live-only mode */ }
+}
+
+// Union two day-maps of the SAME platform, keeping the larger count per day.
+// (Sources overlap in coverage, so summing would double-count; past-day
+// submission counts never legitimately shrink, so max is the truth.)
+function mergeMaxDays(base, extra) {
+  const out = Object.assign({}, base || {});
+  Object.keys(extra || {}).forEach(d => {
+    if (!out[d] || extra[d] > out[d]) out[d] = extra[d];
+  });
+  return out;
 }
 
 // Keep cached activity maps to roughly the heatmap window so the cache stays small.
@@ -562,9 +578,16 @@ function posInt(v) {
   return isFinite(n) && n > 0 ? Math.round(n) : null;
 }
 
-// UTC YYYY-MM-DD for a unix-seconds timestamp (matches the platforms' keys)
+// UTC YYYY-MM-DD for a unix-seconds timestamp (LeetCode's calendar keys)
 function isoDayUTC(unixSeconds) {
   return new Date(unixSeconds * 1000).toISOString().slice(0, 10);
+}
+
+// IST (UTC+5:30) YYYY-MM-DD — Codeforces submissions are bucketed in the
+// portfolio owner's timezone so days line up with CodeChef's IST dates and
+// late-night solves count toward the day the owner actually experienced.
+function isoDayIST(unixSeconds) {
+  return new Date((unixSeconds + 19800) * 1000).toISOString().slice(0, 10);
 }
 
 // Activity maps ({ 'YYYY-MM-DD': submissions }) fetched live this session.
@@ -574,7 +597,7 @@ const sourceState = { lc: 'pending', cf: 'pending', cc: 'pending' };
 
 async function refreshLeetCode() {
   const base = 'https://alfa-leetcode-api.onrender.com/' + HANDLES.lc;
-  let solvedOK = false, calendarOK = false;
+  let solvedOK = false, calendarOK = false, lcDays = null;
 
   const applySolved = (n) => {
     solvedOK = true;
@@ -583,8 +606,13 @@ async function refreshLeetCode() {
     updateTotalSolved();
     saveStatsCache('lc', { solved: n });
   };
+  // The calendar payload hides in several shapes across endpoints/mirrors.
+  const pickCal = (d) => d && (d.submissionCalendar
+    || (d.data && d.data.submissionCalendar)
+    || (d.data && d.data.matchedUser && d.data.matchedUser.userCalendar && d.data.matchedUser.userCalendar.submissionCalendar));
   // LeetCode's submission calendar is { unixSeconds: count }, sometimes
-  // JSON-encoded as a string; normalize it into a per-day map.
+  // JSON-encoded as a string. Sources are merged (max per day) because the
+  // trailing calendar and the per-year calendars overlap in coverage.
   const applyCalendar = (cal) => {
     if (typeof cal === 'string') { try { cal = JSON.parse(cal); } catch (e) { return; } }
     if (!cal || typeof cal !== 'object') return;
@@ -599,10 +627,12 @@ async function refreshLeetCode() {
     });
     if (!Object.keys(map).length) return;
     calendarOK = true;
-    liveDays.lc = map;
-    saveStatsCache('lc', { days: map });
+    lcDays = mergeMaxDays(lcDays, map);
+    liveDays.lc = lcDays;
+    saveStatsCache('lc', { days: map }); // cache merges with prior history
   };
 
+  const prevYear = new Date().getFullYear() - 1;
   const results = await Promise.allSettled([
     fetchJSON(base + '/solved', 20000).then(d => {
       const n = posInt(d && (d.solvedProblem !== undefined ? d.solvedProblem : d.totalSolved));
@@ -622,11 +652,11 @@ async function refreshLeetCode() {
         saveStatsCache('lc', { pct: statsData.lcPercentile });
       }
     }),
-    fetchJSON(base + '/calendar', 20000).then(d => {
-      applyCalendar(d && (d.submissionCalendar
-        || (d.data && d.data.submissionCalendar)
-        || (d.data && d.data.matchedUser && d.data.matchedUser.userCalendar && d.data.matchedUser.userCalendar.submissionCalendar)));
-    }),
+    fetchJSON(base + '/calendar', 20000).then(d => applyCalendar(pickCal(d))),
+    // The trailing calendar can come back scoped to the current year only —
+    // fetch last year explicitly so the older half of the grid isn't empty.
+    fetchJSON('https://alfa-leetcode-api.onrender.com/userProfileCalendar?username=' + HANDLES.lc + '&year=' + prevYear, 20000)
+      .then(d => applyCalendar(pickCal(d))),
   ]);
   results.forEach(r => { if (r.status === 'rejected') console.log('LeetCode API:', r.reason && r.reason.message); });
 
@@ -678,7 +708,7 @@ async function refreshCodeforces() {
       if (sub.verdict === 'OK' && sub.problem) {
         solvedSet.add(sub.problem.contestId + '-' + sub.problem.index);
       }
-      const d = isoDayUTC(sub.creationTimeSeconds);
+      const d = isoDayIST(sub.creationTimeSeconds);
       map[d] = (map[d] || 0) + 1;
     });
     if (solvedSet.size > 0) {
@@ -699,9 +729,20 @@ async function refreshCodeforces() {
 
 async function refreshCodeChef() {
   const got = { rating: false, stars: false, solved: false, heat: false };
+  let ccDays = null;
+
+  // How many days the collected CodeChef activity spans — a narrow span
+  // means we only have the recent-submissions window, so a source with
+  // fuller history is still worth querying.
+  const ccSpan = () => {
+    if (!ccDays) return 0;
+    const ks = Object.keys(ccDays).sort();
+    return (Date.parse(ks[ks.length - 1]) - Date.parse(ks[0])) / 86400000;
+  };
 
   // Apply whichever fields a source managed to provide; earlier (more
-  // reliable) sources win per field, later ones only fill gaps.
+  // reliable) sources win per field, but activity maps are UNIONED (max per
+  // day) so every source's coverage contributes.
   const applyCC = (src) => {
     if (!src) return;
     const rating = posInt(src.rating !== undefined ? src.rating : src.currentRating);
@@ -726,7 +767,7 @@ async function refreshCodeChef() {
       updateTotalSolved();
       saveStatsCache('cc', { solved: solved });
     }
-    if (!got.heat && Array.isArray(src.heatMap)) {
+    if (Array.isArray(src.heatMap)) {
       const map = {};
       src.heatMap.forEach(pt => {
         if (!pt || typeof pt.date !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(pt.date)) return;
@@ -738,8 +779,9 @@ async function refreshCodeChef() {
       });
       if (Object.keys(map).length) {
         got.heat = true;
-        liveDays.cc = map;
-        saveStatsCache('cc', { days: map });
+        ccDays = mergeMaxDays(ccDays, map);
+        liveDays.cc = ccDays;
+        saveStatsCache('cc', { days: map }); // cache merges with prior history
       }
     }
   };
@@ -750,8 +792,9 @@ async function refreshCodeChef() {
     applyCC(await fetchJSON('/api/codechef?handle=' + HANDLES.cc, 15000));
   } catch (e) { console.log('CodeChef own API:', e.message); }
 
-  // Source 2: community CodeChef API — rating, stars and activity heatmap.
-  if (!got.rating || !got.stars || !got.heat) {
+  // Source 2: community CodeChef API — rating, stars and its ~6-month
+  // heatmap, which fills history the recent-submissions feed can't reach.
+  if (!got.rating || !got.stars || !got.heat || ccSpan() < 90) {
     try {
       const d = await fetchJSON('https://codechef-api.vercel.app/handle/' + HANDLES.cc, 20000);
       if (d && d.success !== false) applyCC(d);
@@ -846,10 +889,16 @@ function cfColor(r) { return r < 1200 ? '#808080' : r < 1400 ? '#00c853' : r < 1
    if its API is down. Fabricated filler is never used — if nothing has
    loaded yet the grid stays empty and says so.
    ========================================================================== */
-// Best available activity map per platform: live this session, else cached.
+// Best available activity map per platform: fresh data from this session
+// UNIONED with cached history (max per day), so a live source with narrow
+// coverage never hides fuller history collected earlier.
 function heatmapSourceMaps() {
   const cache = loadStatsCache();
-  const pick = (k) => liveDays[k] || (cache[k] || {}).days || null;
+  const pick = (k) => {
+    const cached = (cache[k] || {}).days || null;
+    if (liveDays[k] && cached) return mergeMaxDays(cached, liveDays[k]);
+    return liveDays[k] || cached;
+  };
   return { lc: pick('lc'), cf: pick('cf'), cc: pick('cc') };
 }
 
@@ -896,9 +945,10 @@ function renderHeatmap(daysMap, hasData) {
   const MS_DAY = 86400000;
   const mNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-  // Range: ~52 weeks ending today (UTC), columns aligned to a Sunday start.
-  const t = new Date();
-  const endUTC = Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate());
+  // Range: ~52 weeks, columns aligned to a Sunday start. The window ends on
+  // the owner's current IST date so late-night solves count toward "today".
+  const nowIST = new Date(Date.now() + 19800000);
+  const endUTC = Date.UTC(nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate());
   const back = endUTC - 7 * 51 * MS_DAY;
   const startUTC = back - new Date(back).getUTCDay() * MS_DAY;
 
