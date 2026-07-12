@@ -647,6 +647,35 @@ body.nav-open .nav-hamburger span:nth-child(3) { transform: rotate(-45deg) trans
   color: var(--accent);
 }
 
+/* Aggregated-profile (Codolio) link under the heatmap */
+.coding-more {
+  text-align: center;
+  margin-top: 2.4rem;
+}
+.codolio-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0.85rem 1.6rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  transition: all 0.35s var(--ease-out);
+}
+.codolio-link strong {
+  color: var(--accent);
+  font-weight: 600;
+}
+.codolio-link:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(232, 197, 71, 0.15);
+}
+
 /* ==========================================================================
    SCROLL PROGRESS BAR
    ========================================================================== */

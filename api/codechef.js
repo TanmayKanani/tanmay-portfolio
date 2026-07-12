@@ -66,6 +66,48 @@ async function fetchPage(url, ms) {
   }
 }
 
+// Fallback activity source: CodeChef's recent-submissions feed. Reconstructs
+// daily submission counts from the last few pages when the profile page no
+// longer embeds heatmap data. Returns [{ date, value }] or null.
+async function recentDayMap(handle) {
+  const pages = [0, 1, 2, 3, 4, 5];
+  const results = await Promise.allSettled(pages.map((p) =>
+    fetchPage('https://www.codechef.com/recent/user?user_handle=' + handle + '&page=' + p, 6000)
+  ));
+
+  const map = {};
+  let any = false;
+  const todayISO = new Date().toISOString().slice(0, 10);
+
+  results.forEach((r) => {
+    if (r.status !== 'fulfilled' || !r.value) return;
+    let content = r.value;
+    try {
+      const j = JSON.parse(content);
+      content = j && j.content ? String(j.content) : '';
+    } catch (e) { /* some deployments return raw HTML */ }
+    if (!content) return;
+
+    // Absolute timestamps: "hh:mm AM dd/mm/yy"
+    for (const m of content.matchAll(/\d{1,2}:\d{2}\s*[AP]M\s+(\d{2})\/(\d{2})\/(\d{2})/g)) {
+      const day = Number(m[1]), month = Number(m[2]);
+      if (day < 1 || day > 31 || month < 1 || month > 12) continue;
+      const d = '20' + m[3] + '-' + m[2] + '-' + m[1];
+      map[d] = (map[d] || 0) + 1;
+      any = true;
+    }
+    // Relative timestamps ("34 min ago") are today's submissions
+    const rel = content.match(/\b\d+\s*(?:sec|min|hour)s?\s+ago\b/gi);
+    if (rel) {
+      map[todayISO] = (map[todayISO] || 0) + rel.length;
+      any = true;
+    }
+  });
+
+  if (!any) return null;
+  return Object.keys(map).sort().map((d) => ({ date: d, value: map[d] }));
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
@@ -77,8 +119,12 @@ module.exports = async (req, res) => {
 
   let data = { rating: null, highestRating: null, stars: null, solved: null, heatMap: null };
 
+  // Kick off the recent-submissions scan in parallel — it's the activity
+  // fallback if the profile page doesn't embed heatmap data anymore.
+  const recentPromise = recentDayMap(handle).catch(() => null);
+
   try {
-    const html = await fetchPage('https://www.codechef.com/users/' + handle, 5000);
+    const html = await fetchPage('https://www.codechef.com/users/' + handle, 4500);
     data = parseProfile(html);
   } catch (e) { /* blocked or down — try the text mirror below */ }
 
@@ -86,7 +132,7 @@ module.exports = async (req, res) => {
   // of the page still carries "Total Problems Solved: N" and the ratings.
   if (data.solved == null && data.rating == null) {
     try {
-      const text = await fetchPage('https://r.jina.ai/https://www.codechef.com/users/' + handle, 4000);
+      const text = await fetchPage('https://r.jina.ai/https://www.codechef.com/users/' + handle, 3500);
       const alt = parseProfile(text);
       data = {
         rating: data.rating != null ? data.rating : alt.rating,
@@ -96,6 +142,10 @@ module.exports = async (req, res) => {
         heatMap: data.heatMap || alt.heatMap,
       };
     } catch (e) { /* nothing else to try */ }
+  }
+
+  if (!data.heatMap || !data.heatMap.length) {
+    data.heatMap = await recentPromise;
   }
 
   if (data.rating == null && data.solved == null && !data.heatMap) {
@@ -110,3 +160,4 @@ module.exports = async (req, res) => {
 };
 
 module.exports.parseProfile = parseProfile;
+module.exports.recentDayMap = recentDayMap;
