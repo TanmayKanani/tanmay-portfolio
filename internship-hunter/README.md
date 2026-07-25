@@ -55,7 +55,8 @@ Then, in order:
 4. **Run the pipeline:**
 
 ```bash
-node bin/hunter.js discover      # find companies
+node bin/hunter.js discover      # find companies from the job boards
+node bin/hunter.js seed          # or load 44 known remote-friendly companies
 node bin/hunter.js contacts      # find their hiring addresses
 node bin/hunter.js queue         # draft the emails
 node bin/hunter.js review        # read every draft
@@ -180,6 +181,7 @@ Pipeline
   run       [--live]                          discover → contacts → queue → send
 
 Data
+  seed      [--only dev-tools]                Load 44 remote-friendly companies
   add       --name "Acme" --domain acme.io [--role "SWE Intern"]
   contact   --company acme.io --email careers@acme.io [--name "Jane Doe"]
   suppress  --email x@y.com | --domain y.com | --list
@@ -194,8 +196,18 @@ Dashboard
 
 ## How each stage works
 
+**0 · Starter list (optional).** `hunter seed` loads 44 remote-friendly
+software companies — remote-first organisations, developer-tool companies and
+open-source shops — with verified domains. It exists because board coverage of
+internships is thin and a run can legitimately come back empty. It is a list of
+companies, *not* a list of confirmed openings: the contact stage still reads
+each company's own careers page, and nothing is sent unreviewed.
+
 **1 · Discovery.** Pulls postings from Remotive, RemoteOK, Arbeitnow and
-Himalayas. Any board that is down or rate-limited is skipped with a warning —
+Himalayas, asking each for its software category rather than filtering a
+general feed afterwards. A posting must look like an actual software role —
+"junior" and "remote" alone are not enough, or a Procurement Specialist
+outranks a real internship. Any board that is down or rate-limited is skipped with a warning —
 the run continues on whatever the others returned, and no data is ever
 fabricated to fill a gap. Postings are filtered to intern/junior/graduate
 titles, scored against your profile's skills and target roles (seniority
@@ -333,8 +345,23 @@ This needs Node 20+. Check with `node --version` and install the current LTS
 from [nodejs.org](https://nodejs.org).
 
 **The page loads but every panel is empty** — that's correct on a fresh
-install. There's no data until you run `discover`, or add a company by hand
-with `hunter add`.
+install. There's no data until you run `discover`, `seed`, or add a company by
+hand with `hunter add`.
+
+**Discovery returns very few companies** — that's the relevance filter working.
+Boards carry far more non-technical roles than technical ones, and postings
+that aren't software jobs are dropped. The run reports the funnel
+(`fetched → entry-level → software roles`) so you can see where they went. If
+the boards are thin, use `hunter seed`.
+
+**"N companies have no website on file"** — a company with no domain can't be
+researched, because there are no pages to read. Supply one with
+`hunter add --name "<name>" --domain <domain>`.
+
+**"N contacts are on file but below the confidence bar"** — those are inferred
+addresses (`careers@…`) rather than ones the company published, so they sit
+under the default threshold on purpose. To use them anyway:
+`hunter queue --min-confidence 0.4`.
 
 **"Could not reach Gmail. The connection timed out."** — your network blocks
 outbound mail ports (465/993). Common on college, office and public Wi-Fi. Use

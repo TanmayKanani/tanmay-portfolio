@@ -27,6 +27,7 @@ import { getAuthUrl, exchangeCode, isAuthorized, disconnect, transportLabel, ver
 import { createApp } from './server.js';
 import { startScheduler } from './scheduler.js';
 import { slugify, normalizeDomain } from './util.js';
+import { SEED_COMPANIES, SEED_NOTE } from './discovery/seed.js';
 import { driver } from './sqlite.js';
 
 const [, , rawCommand = 'help', ...rest] = process.argv;
@@ -85,6 +86,7 @@ ${C.bold}Pipeline${C.reset}
   run       [--live]                          discover → contacts → queue → send
 
 ${C.bold}Data${C.reset}
+  seed      [--only dev-tools]                Load a curated list of remote-friendly companies
   add       --name "Acme" --domain acme.io [--role "SWE Intern"]
   contact   --company acme.io --email careers@acme.io [--name "Jane Doe"]
   suppress  --email x@y.com | --domain y.com [--reason "..."]
@@ -384,6 +386,39 @@ async function cmdDoctor() {
   say('');
 }
 
+/* Load the curated starter list. Safe to re-run: upsert dedupes on domain. */
+function cmdSeed() {
+  banner();
+  const only = flags.only ? String(flags.only) : null;
+  const list = only ? SEED_COMPANIES.filter((c) => c.why === only) : SEED_COMPANIES;
+
+  if (!list.length) {
+    say(`${C.red}✗${C.reset} No companies tagged "${only}". Try: remote-first, dev-tools, open-source`);
+    return;
+  }
+
+  let created = 0;
+  for (const c of list) {
+    const { created: isNew } = companies.upsert({
+      name: c.name,
+      slug: slugify(c.name),
+      domain: c.domain,
+      website: `https://${c.domain}`,
+      source: 'seed',
+      remote: true,
+      // Below anything discovery scores, so genuine postings always rank first.
+      score: 0.2,
+    });
+    if (isNew) created += 1;
+  }
+
+  say(`${C.green}✓${C.reset} ${created} new, ${list.length - created} already on file (${list.length} in the list).`);
+  say('');
+  say(`  ${C.dim}${SEED_NOTE}${C.reset}`);
+  say('');
+  say(`${C.bold}Next:${C.reset}  node bin/hunter.js contacts --limit 10`);
+}
+
 async function cmdContact() {
   const email = String(flags.email || '');
   const key = String(flags.company || '');
@@ -497,6 +532,9 @@ async function main() {
 
     case 'contact':
       return cmdContact();
+
+    case 'seed':
+      return cmdSeed();
 
     case 'doctor':
       return cmdDoctor();

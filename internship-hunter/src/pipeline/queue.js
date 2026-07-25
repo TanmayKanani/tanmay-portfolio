@@ -22,7 +22,21 @@ export async function queueFirstTouch(opts = {}) {
 
   const eligible = contacts.eligibleForFirstTouch({ minConfidence, cooldownDays, limit });
   if (!eligible.length) {
-    log.info('Nothing eligible to queue — run discovery/contacts first, or lower MIN_CONFIDENCE.');
+    /* The usual cause is a shelf full of guessed addresses. They sit just under
+       the default bar on purpose — a guess is a plausible inbox, not a
+       published one — so say what the trade-off is rather than naming a
+       variable and leaving the reader to work it out. */
+    const belowBar = contacts.eligibleForFirstTouch({ minConfidence: 0, cooldownDays, limit: 200 }).length;
+
+    if (belowBar) {
+      log.info(
+        `${belowBar} contact(s) are on file but below the confidence bar of ${minConfidence}. ` +
+          `Those are inferred addresses like careers@ rather than ones the company published. ` +
+          `To write to them anyway:  hunter queue --min-confidence 0.4`,
+      );
+    } else {
+      log.info('Nothing eligible to queue — run discovery and contacts first.');
+    }
     return { queued: 0, skipped: 0, drafts: [] };
   }
 

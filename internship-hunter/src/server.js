@@ -12,6 +12,7 @@ import { companies, contacts, outreach, suppressions, stats, recentEvents, setti
 import { getAuthUrl, exchangeCode, isAuthorized, disconnect, transportLabel, verifyAppPassword } from './mail/index.js';
 import { senderIdentity } from './pipeline/send.js';
 import { runDiscovery } from './discovery/index.js';
+import { SEED_COMPANIES } from './discovery/seed.js';
 import { runContactDiscovery } from './contacts/index.js';
 import { queueFirstTouch } from './pipeline/queue.js';
 import { sendQueued } from './pipeline/send.js';
@@ -172,6 +173,23 @@ export function createApp() {
 
   const TASKS = {
     discovery: (body) => runDiscovery({ limit: body.limit, minScore: body.minScore }),
+    seed: () => {
+      let created = 0;
+      for (const c of SEED_COMPANIES) {
+        const { created: isNew } = companies.upsert({
+          name: c.name,
+          slug: c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+          domain: c.domain,
+          website: `https://${c.domain}`,
+          source: 'seed',
+          remote: true,
+          score: 0.2,
+        });
+        if (isNew) created += 1;
+      }
+      log.ok(`Starter list loaded — ${created} new, ${SEED_COMPANIES.length - created} already on file`);
+      return { created, total: SEED_COMPANIES.length };
+    },
     contacts: (body) => runContactDiscovery({ limit: body.limit, allowPatterns: body.allowPatterns }),
     queue: (body) => queueFirstTouch({ limit: body.limit, minConfidence: body.minConfidence }),
     send: (body) => sendQueued({ limit: body.limit, dryRun: body.dryRun }),

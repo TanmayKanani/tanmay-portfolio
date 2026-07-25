@@ -19,12 +19,45 @@ function matchesKeywords(job, keywords) {
 
 const SENIOR_MARKERS = /\b(senior|sr\.?|staff|principal|lead|head of|director|vp|manager|architect|10\+? years|expert)\b/i;
 
+/* A posting has to actually be a software job. Without this, "junior" alone
+   was enough to rank a Procurement Specialist above a real internship —
+   general job boards carry far more non-technical roles than technical ones,
+   and "entry level + remote" describes most of them. */
+const TECH_ROLE =
+  /\b(software|engineer(ing)?|developer|programmer|programming|full[- ]?stack|front[- ]?end|back[- ]?end|web dev|mobile dev|android|ios|devops|sre|site reliability|platform|infrastructure|cloud|data (scientist|engineer|analyst)|machine learning|ml|ai|computer (science|vision)|qa|test automation|security engineer|systems?|embedded|firmware|database|dba|api|sdet)\b/i;
+
+/* Explicitly non-technical functions. A title can contain "engineer" and
+   still be a sales role ("Sales Engineer"), so these are checked too. */
+const NON_TECH_ROLE =
+  /\b(sales|account (executive|manager)|business development|bdr|sdr|marketing|seo|content writer|copywriter|social media|recruit(er|ing)|talent acquisition|human resources|hr\b|people ops|procurement|purchasing|supply chain|logistics|warehouse|compliance|legal|paralegal|accountant|accounting|bookkeep|payroll|finance|audit|insurance|customer (service|support|success)|call ?cent(er|re)|receptionist|administrat(or|ive) assistant|office (manager|admin)|operations coordinator|teacher|tutor|nurse|driver|cleaner|barista|retail|cashier|translator|transcription|virtual assistant|data entry)\b/i;
+
+/* Language-specific tokens that indicate the posting is not in English.
+   Not a disqualifier by itself, but a German or Spanish marketing posting is
+   almost never an English-language software internship. */
+const NON_ENGLISH_MARKERS = /\b(praktikant|werkstudent|mitarbeiter|vertrieb|stellenangebot|homeoffice|asesor|ventas|empleo|remoto|sin experiencia|stage|alternance|développeur)\b/i;
+
+/** Word-boundary match, so the skill "git" does not match "digital". */
+function mentionsSkill(text, skill) {
+  const escaped = skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // Skills like "c++" or "node.js" end in punctuation; only add \b where the
+  // edge character is a word character, otherwise the boundary never matches.
+  const left = /^\w/.test(skill) ? '\\b' : '';
+  const right = /\w$/.test(skill) ? '\\b' : '';
+  return new RegExp(`${left}${escaped}${right}`, 'i').test(text);
+}
+
 /** 0..1 fit score. Drives ordering, so the best leads get contacted first. */
 export function scoreJob(job, profile) {
   const title = (job.role_title || '').toLowerCase();
   const tags = (job.tags || []).map((t) => String(t).toLowerCase());
   const text = `${title} ${tags.join(' ')} ${(job.description || '').toLowerCase()}`;
   let score = 0;
+
+  /* Gate before scoring: a role that is not a software job is not a lead,
+     however junior and remote it happens to be. */
+  if (NON_TECH_ROLE.test(title)) return 0;
+  if (!TECH_ROLE.test(title) && !TECH_ROLE.test(tags.join(' '))) return 0;
+  if (NON_ENGLISH_MARKERS.test(`${title} ${job.location || ''}`)) return 0;
 
   if (/\bintern(ship)?\b/.test(title)) score += 0.35;
   else if (/\b(junior|entry[- ]level|graduate|new ?grad|trainee|apprentice)\b/.test(title)) score += 0.28;
@@ -34,7 +67,7 @@ export function scoreJob(job, profile) {
   if (SENIOR_MARKERS.test(title)) score -= 0.45;
 
   const skills = (profile.skills || []).map((s) => String(s).toLowerCase());
-  const hits = skills.filter((s) => s.length > 1 && text.includes(s));
+  const hits = skills.filter((s) => s.length > 1 && mentionsSkill(text, s));
   score += Math.min(hits.length * 0.06, 0.3);
 
   const wantedRoles = (profile.targetRoles || []).map((r) => String(r).toLowerCase());
@@ -68,10 +101,17 @@ export async function runDiscovery(opts = {}) {
   const jobs = await fetchAllSources({ sources, limit });
   log.info(`Fetched ${jobs.length} postings`);
 
-  const relevant = jobs
-    .filter((j) => matchesKeywords(j, config.discovery.keywords))
-    .map((j) => ({ ...j, score: scoreJob(j, profile) }))
-    .filter((j) => j.score >= minScore);
+  /* Track why postings fall away. Silent filtering is what made an earlier
+     run look broken: five companies were stored, none of them software. */
+  const junior = jobs.filter((j) => matchesKeywords(j, config.discovery.keywords));
+  const scored = junior.map((j) => ({ ...j, score: scoreJob(j, profile) }));
+  const relevant = scored.filter((j) => j.score >= minScore);
+  const notTechnical = scored.filter((j) => j.score === 0).length;
+
+  log.info(
+    `${jobs.length} fetched → ${junior.length} entry-level → ${relevant.length} software roles` +
+      (notTechnical ? ` (${notTechnical} dropped as non-technical)` : ''),
+  );
 
   // Collapse multiple postings from the same company into their best role.
   const best = new Map();
@@ -95,12 +135,21 @@ export async function runDiscovery(opts = {}) {
     }
     if (!domain) {
       result.unresolved += 1;
-      log.debug(`No domain resolved for "${job.name}" — stored without one`);
+      // Worth saying out loud: a company with no domain cannot be researched
+      // for contacts, so it is a dead end until one is supplied by hand.
+      log.warn(`No website found for "${job.name}" — contact discovery will skip it`);
     }
 
     const { created } = companies.upsert({ ...job, domain, slug: job.slug || slugify(job.name) });
     if (created) result.created += 1;
     else result.updated += 1;
+  }
+
+  if (result.unresolved) {
+    log.info(
+      `${result.unresolved} compan${result.unresolved === 1 ? 'y has' : 'ies have'} no website. ` +
+        `Add one by hand with:  hunter add --name "<name>" --domain <domain>`,
+    );
   }
 
   log.ok(

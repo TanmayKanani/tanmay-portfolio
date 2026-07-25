@@ -499,3 +499,92 @@ describe('list queries', () => {
     assert.deepEqual(outreach.list({ status: 'nonexistent-status' }), []);
   });
 });
+
+/* --------------------- relevance gate (real-world cases) ---------------- */
+
+describe('discovery relevance', () => {
+  const profile = {
+    skills: ['python', 'c++', 'javascript', 'sql', 'django', 'fastapi', 'git'],
+    targetRoles: ['software engineer', 'backend engineer'],
+  };
+  const job = (role_title, extra = {}) => ({ role_title, remote: true, tags: [], ...extra });
+
+  /* These are the five postings a real run actually returned before the gate
+     existed. Every one is a non-software role that scored high enough to be
+     stored, purely because the title said "junior" or "remote". */
+  const observed = [
+    'Praktikant Marketing Automation mit KI (m/w/d) in remote / Homeoffice',
+    'Asesor Ventas Remoto 1.800 Al Mes Remoto Sin Experiencia',
+    'Operations Coordinator',
+    'Compliance Administrator',
+    'Junior Procurement Specialist',
+  ];
+
+  for (const title of observed) {
+    test(`rejects "${title.slice(0, 40)}"`, () => {
+      assert.equal(scoreJob(job(title), profile), 0);
+    });
+  }
+
+  test('rejects non-technical roles even when they say junior and remote', () => {
+    for (const t of ['Junior Sales Executive', 'Junior Recruiter', 'Entry Level Accountant', 'Graduate Marketing Assistant']) {
+      assert.equal(scoreJob(job(t), profile), 0, `${t} should be rejected`);
+    }
+  });
+
+  test('accepts genuine software internships', () => {
+    for (const t of [
+      'Software Engineering Intern',
+      'Backend Engineer Intern',
+      'Junior Full Stack Developer',
+      'Graduate Software Engineer',
+      'Python Developer Intern',
+      'Junior Platform Engineer',
+    ]) {
+      assert.ok(scoreJob(job(t), profile) >= 0.25, `${t} should pass the bar`);
+    }
+  });
+
+  test('an internship outranks a plain junior role', () => {
+    assert.ok(
+      scoreJob(job('Software Engineering Intern'), profile) >
+        scoreJob(job('Junior Software Engineer'), profile),
+    );
+  });
+
+  test('senior software titles stay below the bar', () => {
+    for (const t of ['Senior Software Engineer', 'Staff Backend Engineer', 'Principal Architect']) {
+      assert.ok(scoreJob(job(t), profile) < 0.25, `${t} should not qualify`);
+    }
+  });
+
+  test('skills match on word boundaries, not substrings', () => {
+    // "git" must not match "digital"; without a boundary this scored points.
+    const digital = scoreJob(job('Software Engineer Intern', { description: 'digital agency' }), { skills: ['git'], targetRoles: [] });
+    const real = scoreJob(job('Software Engineer Intern', { description: 'we use git daily' }), { skills: ['git'], targetRoles: [] });
+    assert.ok(real > digital, 'a genuine mention should outscore an accidental substring');
+  });
+
+  test('punctuated skills still match', () => {
+    const withCpp = scoreJob(job('Software Engineer Intern', { description: 'C++ and Node.js' }), { skills: ['c++', 'node.js'], targetRoles: [] });
+    const without = scoreJob(job('Software Engineer Intern', { description: 'nothing relevant' }), { skills: ['c++', 'node.js'], targetRoles: [] });
+    assert.ok(withCpp > without, 'skills ending in punctuation must still be detected');
+  });
+});
+
+describe('mojibake repair', () => {
+  test('restores text that arrived double-decoded', async () => {
+    const { repairMojibake } = await import('../src/util.js');
+    const original = 'Éxito Oposiciones — €1.800';
+    const broken = Buffer.from(original, 'utf8').toString('latin1');
+    assert.notEqual(broken, original, 'precondition: the sample is actually corrupted');
+    assert.equal(repairMojibake(broken), original);
+  });
+
+  test('leaves correct text alone', async () => {
+    const { repairMojibake } = await import('../src/util.js');
+    for (const good of ['Normal Company Ltd', 'Café Ltd', 'Zürich Insurance', 'Praktikant Marketing']) {
+      assert.equal(repairMojibake(good), good, `${good} should be untouched`);
+    }
+  });
+});

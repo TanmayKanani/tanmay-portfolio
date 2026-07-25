@@ -142,3 +142,24 @@ export function chunk(arr, size) {
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out;
 }
+
+/* Repair text that was UTF-8 but got decoded as Latin-1 somewhere upstream —
+   the corruption that turns "Éxito" into "Ã‰xito" and "€" into "â‚¬". Several
+   job boards serve their feeds already damaged this way; our own decoding is
+   correct, so this only ever runs on damage that arrived with the data.
+
+   The signature is a Latin-1 high character (Â-Ã, â) followed
+   by another high character — a sequence essentially absent from real text.
+   The repair is kept only when the round-trip yields valid UTF-8. */
+const MOJIBAKE_SIGNATURE = /[ÂÃâ][-¿]/;
+
+export function repairMojibake(value) {
+  if (typeof value !== 'string' || !value || !MOJIBAKE_SIGNATURE.test(value)) return value;
+  try {
+    const repaired = Buffer.from(value, 'latin1').toString('utf8');
+    // A failed round-trip leaves U+FFFD replacement characters; keep the original.
+    return repaired.includes('�') ? value : repaired;
+  } catch {
+    return value;
+  }
+}

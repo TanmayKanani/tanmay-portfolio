@@ -7,7 +7,7 @@
 
 import { config } from '../config.js';
 import { log } from '../logger.js';
-import { fetchWithLimits, stripHtml, truncate, slugify, normalizeDomain } from '../util.js';
+import { fetchWithLimits, stripHtml, truncate, slugify, normalizeDomain, repairMojibake } from '../util.js';
 
 const JSON_HEADERS = {
   Accept: 'application/json',
@@ -26,18 +26,22 @@ async function getJson(url, timeoutMs = 15_000) {
 
 function normalize(job) {
   if (!job.company || !job.title) return null;
+  // Several boards serve already-corrupted UTF-8; fix it before it reaches the
+  // database, an email subject line or the dashboard.
+  const company = repairMojibake(String(job.company).trim());
+  const title = repairMojibake(String(job.title).trim());
   return {
-    name: String(job.company).trim(),
-    slug: slugify(job.company),
+    name: company,
+    slug: slugify(company),
     domain: normalizeDomain(job.domain),
     website: job.website || null,
     careers_url: null,
-    role_title: String(job.title).trim(),
+    role_title: title,
     role_url: job.url || null,
-    location: job.location || null,
+    location: repairMojibake(job.location) || null,
     remote: job.remote !== false,
     tags: Array.isArray(job.tags) ? job.tags.filter(Boolean).map(String).slice(0, 12) : [],
-    description: truncate(stripHtml(job.description), 1200) || null,
+    description: truncate(repairMojibake(stripHtml(job.description)), 1200) || null,
     posted_at: job.posted_at || null,
     source: job.source,
     source_id: job.source_id ? String(job.source_id) : null,
@@ -46,7 +50,11 @@ function normalize(job) {
 
 /* ------------------------------- Remotive ------------------------------ */
 async function remotive(limit) {
-  const data = await getJson(`https://remotive.com/api/remote-jobs?limit=${limit}`);
+  // Ask the board for software roles rather than filtering a general feed
+  // afterwards — the same quota then returns far more usable postings.
+  const data = await getJson(
+    `https://remotive.com/api/remote-jobs?category=software-dev&limit=${limit}`,
+  );
   return (data.jobs || []).map((j) =>
     normalize({
       company: j.company_name,
@@ -64,7 +72,8 @@ async function remotive(limit) {
 
 /* ------------------------------- RemoteOK ------------------------------ */
 async function remoteok(limit) {
-  const data = await getJson('https://remoteok.com/api');
+  // RemoteOK's dev tag is its largest and is almost entirely engineering.
+  const data = await getJson('https://remoteok.com/api?tag=dev');
   // The first element of the feed is a legal/attribution notice, not a job.
   const jobs = Array.isArray(data) ? data.filter((j) => j && j.id && j.position) : [];
   return jobs.slice(0, limit).map((j) =>
@@ -103,7 +112,9 @@ async function arbeitnow(limit) {
 
 /* ------------------------------- Himalayas ----------------------------- */
 async function himalayas(limit) {
-  const data = await getJson(`https://himalayas.app/jobs/api?limit=${Math.min(limit, 100)}`);
+  const data = await getJson(
+    `https://himalayas.app/jobs/api?limit=${Math.min(limit, 100)}&category=software-engineering`,
+  );
   return (data.jobs || []).map((j) =>
     normalize({
       company: j.companyName,

@@ -571,6 +571,7 @@ $('#viewerClose').addEventListener('click', () => $('#viewer').close());
 
 const JOB_LABELS = {
   discovery: 'Searching job boards for remote companies…',
+  seed: 'Loading the starter list of remote-friendly companies…',
   contacts: 'Reading company careers pages for contact addresses…',
   queue: 'Drafting personalised emails…',
   send: 'Sending — paced, this takes a while…',
@@ -627,7 +628,10 @@ async function pollJob(id, task) {
 function summarise(task, r) {
   if (!r) return 'Done.';
   switch (task) {
-    case 'discovery': return `${r.created} new compan${r.created === 1 ? 'y' : 'ies'}, ${r.updated} updated.`;
+    case 'discovery': return r.created || r.updated
+      ? `${r.created} new compan${r.created === 1 ? 'y' : 'ies'}, ${r.updated} updated.`
+      : 'No software internships found on the boards right now — try the starter list.';
+    case 'seed': return `${r.created} new compan${r.created === 1 ? 'y' : 'ies'} added (${r.total} in the list).`;
     case 'contacts': return `${r.added} contact${r.added === 1 ? '' : 's'} across ${r.withContacts} compan${r.withContacts === 1 ? 'y' : 'ies'}.`;
     case 'queue': return `${r.queued} draft${r.queued === 1 ? '' : 's'} queued (${r.aiDrafts} AI-written).`;
     case 'send': return r.dryRun

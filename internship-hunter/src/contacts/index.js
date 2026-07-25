@@ -105,17 +105,43 @@ export async function runContactDiscovery({ limit = 20, ...opts } = {}) {
     return { processed: 0, added: 0, withContacts: 0 };
   }
 
-  log.info(`Researching contacts for ${targets.length} companies…`);
-  const result = { processed: 0, added: 0, withContacts: 0, details: [] };
+  /* A company with no website cannot be researched — there are no pages to
+     read. Saying so up front beats reporting "0 contacts" and leaving the
+     reader to work out why nothing happened. */
+  const withDomain = targets.filter((c) => c.domain);
+  const withoutDomain = targets.length - withDomain.length;
 
-  for (const company of targets) {
+  if (withoutDomain) {
+    log.warn(
+      `${withoutDomain} of ${targets.length} compan${withoutDomain === 1 ? 'y has' : 'ies have'} no website on file — skipping ` +
+        `${withoutDomain === 1 ? 'it' : 'them'}. Add one with:  hunter add --name "<name>" --domain <domain>`,
+    );
+  }
+
+  if (!withDomain.length) {
+    log.info('Nothing to research — no company on the list has a website yet.');
+    return { processed: 0, added: 0, withContacts: 0, skippedNoDomain: withoutDomain };
+  }
+
+  log.info(`Researching contacts for ${withDomain.length} compan${withDomain.length === 1 ? 'y' : 'ies'}…`);
+  const result = { processed: 0, added: 0, withContacts: 0, skippedNoDomain: withoutDomain, details: [] };
+
+  for (const company of withDomain) {
     const r = await findContactsForCompany(company, opts);
     result.processed += 1;
     result.added += r.added;
     if (r.added) result.withContacts += 1;
     result.details.push(r);
-    log.info(`${company.name} (${company.domain || 'no domain'}) → ${r.added} contact(s)`);
+    log.info(`${company.name} (${company.domain}) → ${r.added} contact(s)`);
     await sleep(400);
+  }
+
+  if (!result.added) {
+    log.info(
+      'None of these companies publish a hiring address on their site. ' +
+        'Re-run with --allow-patterns to try shared inboxes like careers@, or add one by hand ' +
+        'with:  hunter contact --company <domain> --email <address>',
+    );
   }
 
   log.ok(`Contact discovery done — ${result.added} contacts across ${result.withContacts} companies`, {
