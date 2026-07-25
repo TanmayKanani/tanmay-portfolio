@@ -90,10 +90,15 @@ export const config = {
     // Human-paced sending: random gap between two messages.
     minDelayMs: num(process.env.MIN_DELAY_MS, 45_000),
     maxDelayMs: num(process.env.MAX_DELAY_MS, 90_000),
-    // Only email addresses we are reasonably confident are real & appropriate.
-    minConfidence: Number(process.env.MIN_CONFIDENCE ?? 0.5),
-    // Guessed addresses are opt-in, not default.
-    allowPatternGuesses: bool(process.env.ALLOW_PATTERN_GUESSES, false),
+    /* Most companies no longer publish a hiring address — they route
+       applications through an ATS form — so scraping alone finds very little.
+       An inferred role inbox on a domain with live MX is a legitimate lead:
+       it is always a shared mailbox rather than a guessed individual, a wrong
+       guess costs a bounce (which auto-suppresses), and every draft is
+       reviewed before it is sent. The bar sits just under those guesses so
+       they are usable, and well above the weakest ones. */
+    minConfidence: Number(process.env.MIN_CONFIDENCE ?? 0.4),
+    allowPatternGuesses: bool(process.env.ALLOW_PATTERN_GUESSES, true),
     requireMx: bool(process.env.REQUIRE_MX, true),
   },
 

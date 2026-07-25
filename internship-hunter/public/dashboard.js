@@ -572,7 +572,7 @@ $('#viewerClose').addEventListener('click', () => $('#viewer').close());
 const JOB_LABELS = {
   discovery: 'Searching job boards for remote companies…',
   seed: 'Loading the starter list of remote-friendly companies…',
-  contacts: 'Reading company careers pages for contact addresses…',
+  contacts: 'Reading careers pages — six companies at a time, this takes a minute…',
   queue: 'Drafting personalised emails…',
   send: 'Sending — paced, this takes a while…',
   followup: 'Drafting follow-ups…',
@@ -632,7 +632,9 @@ function summarise(task, r) {
       ? `${r.created} new compan${r.created === 1 ? 'y' : 'ies'}, ${r.updated} updated.`
       : 'No software internships found on the boards right now — try the starter list.';
     case 'seed': return `${r.created} new compan${r.created === 1 ? 'y' : 'ies'} added (${r.total} in the list).`;
-    case 'contacts': return `${r.added} contact${r.added === 1 ? '' : 's'} across ${r.withContacts} compan${r.withContacts === 1 ? 'y' : 'ies'}.`;
+    case 'contacts': return r.added
+      ? `${r.added} contact${r.added === 1 ? '' : 's'} across ${r.withContacts} compan${r.withContacts === 1 ? 'y' : 'ies'}.`
+      : 'No addresses found — see Activity for why.';
     case 'queue': return `${r.queued} draft${r.queued === 1 ? '' : 's'} queued (${r.aiDrafts} AI-written).`;
     case 'send': return r.dryRun
       ? `Dry run — ${r.sent} message${r.sent === 1 ? '' : 's'} would have been sent.`

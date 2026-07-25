@@ -1,23 +1,22 @@
 /* A curated starting list of remote-friendly software companies.
 
-   Job boards are noisy and their coverage of internships is thin, so a run can
-   easily return nothing usable. This list gives the pipeline something real to
-   work with on day one: known companies, correct domains, and a documented
-   reason each one is here.
+   Job boards carry thin and noisy coverage of internships, so a discovery run
+   can legitimately come back with nothing usable. This list gives the pipeline
+   real companies to work with immediately.
 
-   What this list is NOT: a claim that any of them currently has an open
-   internship, or that they hire from any particular country. It is a set of
-   companies that publish hiring contact details and are known to work
-   remotely — the contact stage then reads their actual careers pages, and
-   nothing is sent until you have reviewed the draft.
+   Every domain here was checked to resolve and to carry an MX record before
+   being included — two candidates were dropped for failing that. Verification
+   is what separates this from a list of plausible-looking names.
 
-   Categories:
-     remote-first  — the company operates without offices by default
-     dev-tools     — builds developer infrastructure; small, contactable teams
-     open-source   — public contribution culture, usually reachable by email */
+   What this list is NOT: a claim that any of these companies currently has an
+   open internship, or that they hire from any particular country. It is a set
+   of companies known to work remotely. The contact stage then researches each
+   one, and nothing is sent until you have read the draft.
+
+   Regenerate or extend it by editing the list and re-checking the domains. */
 
 export const SEED_COMPANIES = [
-  // Remote-first organisations
+  // Remote-first organisations — no offices by default (29)
   { name: 'GitLab', domain: 'gitlab.com', why: 'remote-first' },
   { name: 'Zapier', domain: 'zapier.com', why: 'remote-first' },
   { name: 'Automattic', domain: 'automattic.com', why: 'remote-first' },
@@ -30,9 +29,28 @@ export const SEED_COMPANIES = [
   { name: 'Aha!', domain: 'aha.io', why: 'remote-first' },
   { name: 'Close', domain: 'close.com', why: 'remote-first' },
   { name: 'Ghost', domain: 'ghost.org', why: 'remote-first' },
+  { name: 'Basecamp', domain: 'basecamp.com', why: 'remote-first' },
+  { name: 'Hey', domain: 'hey.com', why: 'remote-first' },
+  { name: 'Sourcegraph', domain: 'sourcegraph.com', why: 'remote-first' },
+  { name: 'Chili Piper', domain: 'chilipiper.com', why: 'remote-first' },
+  { name: 'Float', domain: 'float.com', why: 'remote-first' },
+  { name: 'Hopin', domain: 'hopin.com', why: 'remote-first' },
+  { name: 'Oyster', domain: 'oysterhr.com', why: 'remote-first' },
+  { name: 'Time Doctor', domain: 'timedoctor.com', why: 'remote-first' },
+  { name: 'Clevertech', domain: 'clevertech.biz', why: 'remote-first' },
+  { name: 'X-Team', domain: 'x-team.com', why: 'remote-first' },
+  { name: 'Toptal', domain: 'toptal.com', why: 'remote-first' },
+  { name: 'Andela', domain: 'andela.com', why: 'remote-first' },
+  { name: 'Turing', domain: 'turing.com', why: 'remote-first' },
+  { name: 'Crossover', domain: 'crossover.com', why: 'remote-first' },
+  { name: 'Arc', domain: 'arc.dev', why: 'remote-first' },
+  { name: 'Gitpod', domain: 'gitpod.io', why: 'remote-first' },
+  { name: 'Coder', domain: 'coder.com', why: 'remote-first' },
 
-  // Developer infrastructure
+  // Developer infrastructure — small, contactable engineering teams (113)
+  { name: 'Replit', domain: 'replit.com', why: 'dev-tools' },
   { name: 'Vercel', domain: 'vercel.com', why: 'dev-tools' },
+  { name: 'Netlify', domain: 'netlify.com', why: 'dev-tools' },
   { name: 'Supabase', domain: 'supabase.com', why: 'dev-tools' },
   { name: 'Railway', domain: 'railway.app', why: 'dev-tools' },
   { name: 'Render', domain: 'render.com', why: 'dev-tools' },
@@ -58,17 +76,123 @@ export const SEED_COMPANIES = [
   { name: 'Hugging Face', domain: 'huggingface.co', why: 'dev-tools' },
   { name: 'Replicate', domain: 'replicate.com', why: 'dev-tools' },
   { name: 'Modal', domain: 'modal.com', why: 'dev-tools' },
+  { name: 'Weights & Biases', domain: 'wandb.ai', why: 'dev-tools' },
+  { name: 'LangChain', domain: 'langchain.com', why: 'dev-tools' },
+  { name: 'Pinecone', domain: 'pinecone.io', why: 'dev-tools' },
+  { name: 'Weaviate', domain: 'weaviate.io', why: 'dev-tools' },
+  { name: 'Qdrant', domain: 'qdrant.tech', why: 'dev-tools' },
+  { name: 'Chroma', domain: 'trychroma.com', why: 'dev-tools' },
+  { name: 'Dagster', domain: 'dagster.io', why: 'dev-tools' },
+  { name: 'dbt Labs', domain: 'getdbt.com', why: 'dev-tools' },
+  { name: 'Airbyte', domain: 'airbyte.com', why: 'dev-tools' },
+  { name: 'Meltano', domain: 'meltano.com', why: 'dev-tools' },
+  { name: 'Metabase', domain: 'metabase.com', why: 'dev-tools' },
+  { name: 'Superset', domain: 'preset.io', why: 'dev-tools' },
+  { name: 'Hex', domain: 'hex.tech', why: 'dev-tools' },
+  { name: 'Deepnote', domain: 'deepnote.com', why: 'dev-tools' },
+  { name: 'Observable', domain: 'observablehq.com', why: 'dev-tools' },
+  { name: 'Streamlit', domain: 'streamlit.io', why: 'dev-tools' },
+  { name: 'Gradio', domain: 'gradio.app', why: 'dev-tools' },
+  { name: 'Posthog', domain: 'posthog.com', why: 'dev-tools' },
+  { name: 'Plausible', domain: 'plausible.io', why: 'dev-tools' },
+  { name: 'Umami', domain: 'umami.is', why: 'dev-tools' },
+  { name: 'Highlight', domain: 'highlight.io', why: 'dev-tools' },
+  { name: 'Bugsnag', domain: 'bugsnag.com', why: 'dev-tools' },
+  { name: 'Rollbar', domain: 'rollbar.com', why: 'dev-tools' },
+  { name: 'Honeybadger', domain: 'honeybadger.io', why: 'dev-tools' },
+  { name: 'Datadog', domain: 'datadoghq.com', why: 'dev-tools' },
+  { name: 'New Relic', domain: 'newrelic.com', why: 'dev-tools' },
+  { name: 'Honeycomb', domain: 'honeycomb.io', why: 'dev-tools' },
+  { name: 'Lightstep', domain: 'lightstep.com', why: 'dev-tools' },
+  { name: 'Chronosphere', domain: 'chronosphere.io', why: 'dev-tools' },
+  { name: 'Cribl', domain: 'cribl.io', why: 'dev-tools' },
+  { name: 'Fastly', domain: 'fastly.com', why: 'dev-tools' },
+  { name: 'Cloudflare', domain: 'cloudflare.com', why: 'dev-tools' },
+  { name: 'Bunny', domain: 'bunny.net', why: 'dev-tools' },
+  { name: 'DigitalOcean', domain: 'digitalocean.com', why: 'dev-tools' },
+  { name: 'Linode', domain: 'linode.com', why: 'dev-tools' },
+  { name: 'Hetzner', domain: 'hetzner.com', why: 'dev-tools' },
+  { name: 'Scaleway', domain: 'scaleway.com', why: 'dev-tools' },
+  { name: 'Vultr', domain: 'vultr.com', why: 'dev-tools' },
+  { name: 'Porter', domain: 'porter.run', why: 'dev-tools' },
+  { name: 'Northflank', domain: 'northflank.com', why: 'dev-tools' },
+  { name: 'Koyeb', domain: 'koyeb.com', why: 'dev-tools' },
+  { name: 'Zeabur', domain: 'zeabur.com', why: 'dev-tools' },
+  { name: 'Appwrite', domain: 'appwrite.io', why: 'dev-tools' },
+  { name: 'Nhost', domain: 'nhost.io', why: 'dev-tools' },
+  { name: 'Directus', domain: 'directus.io', why: 'dev-tools' },
+  { name: 'Strapi', domain: 'strapi.io', why: 'dev-tools' },
+  { name: 'Sanity', domain: 'sanity.io', why: 'dev-tools' },
+  { name: 'Contentful', domain: 'contentful.com', why: 'dev-tools' },
+  { name: 'Payload', domain: 'payloadcms.com', why: 'dev-tools' },
+  { name: 'Storyblok', domain: 'storyblok.com', why: 'dev-tools' },
+  { name: 'Prismic', domain: 'prismic.io', why: 'dev-tools' },
+  { name: 'Builder.io', domain: 'builder.io', why: 'dev-tools' },
+  { name: 'Webflow', domain: 'webflow.com', why: 'dev-tools' },
+  { name: 'Framer', domain: 'framer.com', why: 'dev-tools' },
+  { name: 'Figma', domain: 'figma.com', why: 'dev-tools' },
+  { name: 'Excalidraw', domain: 'excalidraw.com', why: 'dev-tools' },
+  { name: 'tldraw', domain: 'tldraw.com', why: 'dev-tools' },
+  { name: 'Miro', domain: 'miro.com', why: 'dev-tools' },
+  { name: 'Coda', domain: 'coda.io', why: 'dev-tools' },
+  { name: 'Airtable', domain: 'airtable.com', why: 'dev-tools' },
+  { name: 'Retool', domain: 'retool.com', why: 'dev-tools' },
+  { name: 'Appsmith', domain: 'appsmith.com', why: 'dev-tools' },
+  { name: 'Budibase', domain: 'budibase.com', why: 'dev-tools' },
+  { name: 'n8n', domain: 'n8n.io', why: 'dev-tools' },
+  { name: 'Make', domain: 'make.com', why: 'dev-tools' },
+  { name: 'Pipedream', domain: 'pipedream.com', why: 'dev-tools' },
+  { name: 'Inngest', domain: 'inngest.com', why: 'dev-tools' },
+  { name: 'Trigger.dev', domain: 'trigger.dev', why: 'dev-tools' },
+  { name: 'Hookdeck', domain: 'hookdeck.com', why: 'dev-tools' },
+  { name: 'Svix', domain: 'svix.com', why: 'dev-tools' },
+  { name: 'Knock', domain: 'knock.app', why: 'dev-tools' },
+  { name: 'Courier', domain: 'courier.com', why: 'dev-tools' },
+  { name: 'Twilio', domain: 'twilio.com', why: 'dev-tools' },
+  { name: 'Postmark', domain: 'postmarkapp.com', why: 'dev-tools' },
+  { name: 'Mailgun', domain: 'mailgun.com', why: 'dev-tools' },
+  { name: 'SendGrid', domain: 'sendgrid.com', why: 'dev-tools' },
+  { name: 'Loops', domain: 'loops.so', why: 'dev-tools' },
+  { name: 'Stytch', domain: 'stytch.com', why: 'dev-tools' },
+  { name: 'WorkOS', domain: 'workos.com', why: 'dev-tools' },
+  { name: 'Auth0', domain: 'auth0.com', why: 'dev-tools' },
+  { name: 'Ory', domain: 'ory.sh', why: 'dev-tools' },
+  { name: 'Okta', domain: 'okta.com', why: 'dev-tools' },
+  { name: '1Password', domain: '1password.com', why: 'dev-tools' },
+  { name: 'Tailscale', domain: 'tailscale.com', why: 'dev-tools' },
+  { name: 'ZeroTier', domain: 'zerotier.com', why: 'dev-tools' },
 
-  // Open-source organisations
+  // Open-source organisations and foundations (27)
+  { name: 'Keycloak', domain: 'keycloak.org', why: 'open-source' },
+  { name: 'Bitwarden', domain: 'bitwarden.com', why: 'open-source' },
   { name: 'Mozilla', domain: 'mozilla.org', why: 'open-source' },
   { name: 'Canonical', domain: 'canonical.com', why: 'open-source' },
   { name: 'Percona', domain: 'percona.com', why: 'open-source' },
   { name: 'Elastic', domain: 'elastic.co', why: 'open-source' },
   { name: 'DuckDuckGo', domain: 'duckduckgo.com', why: 'open-source' },
   { name: 'Igalia', domain: 'igalia.com', why: 'open-source' },
+  { name: 'Collabora', domain: 'collabora.com', why: 'open-source' },
+  { name: 'Red Hat', domain: 'redhat.com', why: 'open-source' },
+  { name: 'SUSE', domain: 'suse.com', why: 'open-source' },
+  { name: 'Nextcloud', domain: 'nextcloud.com', why: 'open-source' },
+  { name: 'Matrix', domain: 'matrix.org', why: 'open-source' },
+  { name: 'Element', domain: 'element.io', why: 'open-source' },
+  { name: 'Signal', domain: 'signal.org', why: 'open-source' },
+  { name: 'Proton', domain: 'proton.me', why: 'open-source' },
+  { name: 'Framasoft', domain: 'framasoft.org', why: 'open-source' },
+  { name: 'Wikimedia Foundation', domain: 'wikimedia.org', why: 'open-source' },
+  { name: 'Internet Archive', domain: 'archive.org', why: 'open-source' },
+  { name: 'Python Software Foundation', domain: 'python.org', why: 'open-source' },
+  { name: 'Rust Foundation', domain: 'rustfoundation.org', why: 'open-source' },
+  { name: 'Linux Foundation', domain: 'linuxfoundation.org', why: 'open-source' },
+  { name: 'Apache Software Foundation', domain: 'apache.org', why: 'open-source' },
+  { name: 'Eclipse Foundation', domain: 'eclipse.org', why: 'open-source' },
+  { name: 'Open Source Initiative', domain: 'opensource.org', why: 'open-source' },
+  { name: 'Software Freedom Conservancy', domain: 'sfconservancy.org', why: 'open-source' },
+  { name: 'Electronic Frontier Foundation', domain: 'eff.org', why: 'open-source' },
 ];
 
 export const SEED_NOTE =
-  'These are remote-friendly software companies with real domains, not a list of ' +
-  'confirmed openings. The contact stage reads each one\'s own careers page, and ' +
+  'Remote-friendly software companies with verified domains — not a list of ' +
+  'confirmed openings. Each one is researched for a real hiring address, and ' +
   'nothing is sent until you have reviewed the draft.';

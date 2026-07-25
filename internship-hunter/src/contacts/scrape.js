@@ -164,8 +164,44 @@ export async function scrapeCompanySite(company, { maxPages = 5 } = {}) {
     rules = { allow: [], disallow: [] };
   }
 
-  // The careers URL we already know about is the highest-value page.
-  const paths = [...new Set([...(company.careers_url ? [company.careers_url] : []), ...CANDIDATE_PATHS])];
+  /* Read the homepage first and take the careers/contact links it actually
+     offers. Guessing paths misses everything behind /company/careers,
+     /work-with-us, /en/jobs and the rest — and a link the site publishes is
+     by definition the page it wants people to use. */
+  const discovered = [];
+  try {
+    await throttle(domain);
+    const home = await fetchWithLimits(origin, {
+      timeoutMs: config.scrape.timeoutMs,
+      maxBytes: config.scrape.maxBytes,
+      headers: { 'User-Agent': config.scrape.userAgent, Accept: 'text/html,application/xhtml+xml' },
+    });
+    if (home.ok && home.body) {
+      const $ = cheerio.load(home.body);
+      $('a[href]').each((_, el) => {
+        const href = $(el).attr('href') || '';
+        const label = `${$(el).text()} ${href}`;
+        if (!/career|job|hiring|join|work.?with|contact|about|team|people/i.test(label)) return;
+        try {
+          const u = new URL(href, origin);
+          if (u.hostname.endsWith(domain) && !discovered.includes(u.pathname)) discovered.push(u.pathname);
+        } catch {
+          /* not a usable href */
+        }
+      });
+    }
+  } catch (err) {
+    log.debug(`Could not read the homepage of ${domain}`, { error: err.message });
+  }
+
+  // Known careers URL first, then what the site links to, then the guesses.
+  const paths = [
+    ...new Set([
+      ...(company.careers_url ? [company.careers_url] : []),
+      ...discovered.slice(0, 6),
+      ...CANDIDATE_PATHS,
+    ]),
+  ];
 
   const results = new Map();
   let visited = 0;

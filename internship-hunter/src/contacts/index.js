@@ -53,7 +53,7 @@ export async function findContactsForCompany(company, opts = {}) {
 
   // --- 2. Inferred inboxes (only if we found nothing) --------------------
   if (!candidates.length && allowPatterns) {
-    const guesses = await guessRoleInboxes(company.domain, { max: 2, requireMx });
+    const guesses = await guessRoleInboxes(company.domain, { max: 3, requireMx });
     for (const g of guesses) {
       candidates.push({
         email: g.email,
@@ -98,6 +98,11 @@ export async function findContactsForCompany(company, opts = {}) {
 }
 
 /** Batch driver over companies that don't have contacts yet. */
+/* Companies are researched in parallel. Six keeps a 44-company run to about a
+   minute and a half without ever putting two requests on the same host at
+   once — the throttle in scrape.js is keyed by hostname. */
+const CONCURRENCY = Number(process.env.CONTACT_CONCURRENCY) || 6;
+
 export async function runContactDiscovery({ limit = 20, ...opts } = {}) {
   const targets = companies.needingContacts(limit);
   if (!targets.length) {
@@ -123,25 +128,58 @@ export async function runContactDiscovery({ limit = 20, ...opts } = {}) {
     return { processed: 0, added: 0, withContacts: 0, skippedNoDomain: withoutDomain };
   }
 
-  log.info(`Researching contacts for ${withDomain.length} compan${withDomain.length === 1 ? 'y' : 'ies'}…`);
+  log.info(
+    `Researching ${withDomain.length} compan${withDomain.length === 1 ? 'y' : 'ies'} ` +
+      `(${CONCURRENCY} at a time — each takes a few seconds)…`,
+  );
   const result = { processed: 0, added: 0, withContacts: 0, skippedNoDomain: withoutDomain, details: [] };
 
-  for (const company of withDomain) {
-    const r = await findContactsForCompany(company, opts);
-    result.processed += 1;
-    result.added += r.added;
-    if (r.added) result.withContacts += 1;
-    result.details.push(r);
-    log.info(`${company.name} (${company.domain}) → ${r.added} contact(s)`);
-    await sleep(400);
-  }
+  /* Work on several companies at once. Politeness is per-host and each company
+     is a different host, so nothing here hits anyone harder — it just stops
+     44 companies taking nine minutes of mostly waiting. */
+  const queue = [...withDomain];
+  const worker = async () => {
+    for (;;) {
+      const company = queue.shift();
+      if (!company) return;
+
+      const r = await findContactsForCompany(company, opts).catch((err) => {
+        log.warn(`${company.name}: ${err.message}`);
+        return { company: company.name, added: 0 };
+      });
+
+      result.processed += 1;
+      result.added += r.added;
+      if (r.added) result.withContacts += 1;
+      result.details.push(r);
+
+      log.info(
+        `[${result.processed}/${withDomain.length}] ${company.name} (${company.domain}) → ` +
+          `${r.added} contact(s)`,
+      );
+    }
+  };
+
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, queue.length) }, worker));
 
   if (!result.added) {
-    log.info(
-      'None of these companies publish a hiring address on their site. ' +
-        'Re-run with --allow-patterns to try shared inboxes like careers@, or add one by hand ' +
-        'with:  hunter contact --company <domain> --email <address>',
-    );
+    const patternsOn = opts.allowPatterns ?? config.limits.allowPatternGuesses;
+    if (!patternsOn) {
+      /* Naming the flag alone is not enough: an .env written before the
+         default changed still sets it to false, and the flag looks like it
+         should already be working. Name the file too. */
+      log.info(
+        'None of these companies publish a hiring address on their site, and inferred ' +
+          'inboxes are switched off. Turn them on for one run with --allow-patterns, ' +
+          'or permanently by setting ALLOW_PATTERN_GUESSES=true in your .env file.',
+      );
+    } else {
+      log.info(
+        'No addresses found. These companies publish none on their sites, and their ' +
+          'domains rejected the usual shared inboxes. Add one by hand with:  ' +
+          'hunter contact --company <domain> --email <address>',
+      );
+    }
   }
 
   log.ok(`Contact discovery done — ${result.added} contacts across ${result.withContacts} companies`, {

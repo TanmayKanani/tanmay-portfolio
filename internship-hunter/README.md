@@ -141,8 +141,8 @@ that. Every one of these is in `.env`.
 | `PER_RUN_CAP` | `10` | Ceiling for a single batch. |
 | `COMPANY_COOLDOWN_DAYS` | `30` | One person per company, once per month. No blasting five addresses at one employer. |
 | `MIN_DELAY_MS` / `MAX_DELAY_MS` | `45s`–`90s` | Randomised human pacing between messages. |
-| `MIN_CONFIDENCE` | `0.5` | Only email addresses the company actually published. |
-| `ALLOW_PATTERN_GUESSES` | `false` | Guessed addresses (`careers@domain`) are opt-in, and only ever shared inboxes — never a guessed individual. |
+| `MIN_CONFIDENCE` | `0.4` | Admits verified shared inboxes; published addresses score higher. |
+| `ALLOW_PATTERN_GUESSES` | `true` | Infer `careers@`/`jobs@` when a company publishes nothing. Only ever shared mailboxes — never a guessed individual — and always MX-checked. |
 | `REQUIRE_MX` | `true` | The domain must have a live MX record. |
 | `RESPECT_ROBOTS` | `true` | robots.txt is honoured; requests to one host are spaced out. |
 
@@ -181,7 +181,7 @@ Pipeline
   run       [--live]                          discover → contacts → queue → send
 
 Data
-  seed      [--only dev-tools]                Load 44 remote-friendly companies
+  seed      [--only dev-tools]                Load 169 remote-friendly companies
   add       --name "Acme" --domain acme.io [--role "SWE Intern"]
   contact   --company acme.io --email careers@acme.io [--name "Jane Doe"]
   suppress  --email x@y.com | --domain y.com | --list
@@ -196,9 +196,11 @@ Dashboard
 
 ## How each stage works
 
-**0 · Starter list (optional).** `hunter seed` loads 44 remote-friendly
-software companies — remote-first organisations, developer-tool companies and
-open-source shops — with verified domains. It exists because board coverage of
+**0 · Starter list (optional).** `hunter seed` loads 169 remote-friendly
+software companies — 29 remote-first organisations, 113 developer-tool
+companies and 27 open-source shops. Every domain was checked to resolve and to
+carry an MX record before inclusion; two candidates were dropped for failing
+that. It exists because board coverage of
 internships is thin and a run can legitimately come back empty. It is a list of
 companies, *not* a list of confirmed openings: the contact stage still reads
 each company's own careers page, and nothing is sent unreviewed.
@@ -217,13 +219,32 @@ autocomplete, falling back to a guess-and-verify pass that only accepts a
 domain if the site actually resolves *and* names the company — otherwise you
 end up mailing domain squatters.
 
-**2 · Contacts.** Fetches robots.txt, then up to five pages a company publishes
-in order to be contacted (`/careers`, `/contact`, `/about`, `/team`, …).
+**2 · Contacts.** Worth being blunt about this stage, because it is the one
+that disappoints. **Most companies no longer publish a hiring address** — they
+route everything through an application form on Greenhouse, Lever or Ashby.
+Scraping their site finds nothing because there is nothing to find.
+
+So there are two mechanisms, and in practice the second does most of the work:
+
+*Published addresses.* Fetches robots.txt, reads the homepage and follows the
+careers/contact links it actually offers (rather than only guessing paths),
+then falls back to the usual candidates (`/careers`, `/contact`, `/about`,
+`/team`, …).
 Extracts `mailto:` links and page text, decodes the common `[at]`/`[dot]`
 obfuscations, and keeps only addresses on the company's own domain. Each hit is
 scored by provenance — a `mailto:` on a careers page (0.90) outranks an address
-buried in body text (0.60). Guessed inboxes score below 0.5, which is why they
-are excluded by the default threshold.
+buried in body text (0.60).
+
+*Inferred inboxes.* When a company publishes nothing, the domain is checked for
+a live MX record and the standard hiring mailboxes are tried: `careers@`,
+`jobs@`, `hiring@`. These score 0.45 and below — usable, but always ranked
+under anything published. The safeguards that matter still hold: they are only
+ever shared mailboxes, never a guessed individual; MX proves the domain
+accepts mail; a wrong guess costs a bounce, which suppresses the address
+automatically; and you read every draft before it goes.
+
+Companies are researched six at a time, so a 169-company run takes a couple of
+minutes rather than half an hour.
 
 **3 · Drafting.** Claude writes subject and body as a structured response, with
 the profile carried in a cached system prompt so a 25-email batch pays for it
@@ -358,10 +379,18 @@ the boards are thin, use `hunter seed`.
 researched, because there are no pages to read. Supply one with
 `hunter add --name "<name>" --domain <domain>`.
 
-**"N contacts are on file but below the confidence bar"** — those are inferred
-addresses (`careers@…`) rather than ones the company published, so they sit
-under the default threshold on purpose. To use them anyway:
-`hunter queue --min-confidence 0.4`.
+**"N contacts are on file but below the confidence bar"** — the addresses found
+are weaker than your `MIN_CONFIDENCE`. Lower it for one run with
+`hunter queue --min-confidence 0.3`, or edit `.env`.
+
+**Contacts finds nothing at all** — check `ALLOW_PATTERN_GUESSES` in your
+`.env`. An `.env` generated before this defaulted to `true` still says `false`,
+and inferred inboxes are where most addresses come from. Set it to `true`, or
+pass `--allow-patterns` for one run.
+
+**Contact discovery seems to run forever** — it researches six companies at a
+time and each takes a few seconds, so 169 companies is a couple of minutes. Use
+`--limit 20` to work through them in batches.
 
 **"Could not reach Gmail. The connection timed out."** — your network blocks
 outbound mail ports (465/993). Common on college, office and public Wi-Fi. Use

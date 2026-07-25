@@ -588,3 +588,60 @@ describe('mojibake repair', () => {
     }
   });
 });
+
+/* ---------------------- inferred inbox policy -------------------------- */
+
+describe('inferred inbox defaults', () => {
+  /* Most companies route hiring through an application form and publish no
+     address, so inferred role inboxes are the normal path rather than an
+     exotic fallback. These lock in what that does and does not permit. */
+
+  test('a role inbox on a live-MX domain clears the default bar', async () => {
+    const { config } = await import('../src/config.js');
+    // Without network, guessRoleInboxes cannot confirm MX and applies its
+    // 0.6 no-MX discount. Undo it to recover the score a verified domain gets.
+    const guesses = await guessRoleInboxes('acme.io', { max: 3, requireMx: false });
+    const bestVerified = Math.max(...guesses.map((g) => g.confidence)) / 0.6;
+    assert.ok(
+      bestVerified >= config.limits.minConfidence,
+      `careers@ scores ${bestVerified.toFixed(2)} once MX is confirmed and must reach ` +
+        `the bar of ${config.limits.minConfidence}, or nothing is ever contactable`,
+    );
+  });
+
+  test('a domain without MX stays below the bar', async () => {
+    const { config } = await import('../src/config.js');
+    // The no-MX discount exists precisely so these are not emailed.
+    const guesses = await guessRoleInboxes('acme.io', { max: 3, requireMx: false });
+    for (const g of guesses) {
+      assert.ok(
+        g.confidence < config.limits.minConfidence,
+        `${g.email} on a domain with no MX must not be contactable`,
+      );
+    }
+  });
+
+  test('inferred addresses still rank below published ones', async () => {
+    const guesses = await guessRoleInboxes('acme.io', { max: 3, requireMx: false });
+    const published = scoreScrapedContact({ email: 'careers@acme.io', source: 'mailto', weight: 3, onCareersPage: true });
+    for (const g of guesses) {
+      assert.ok(g.confidence < published, `${g.email} must not outrank a published address`);
+    }
+  });
+
+  test('every inferred address is a shared mailbox, never a person', async () => {
+    const guesses = await guessRoleInboxes('acme.io', { max: 10, requireMx: false });
+    for (const g of guesses) {
+      assert.equal(g.roleBased, true, `${g.email} must be a role inbox`);
+      assert.ok(
+        /^(careers|jobs|hiring|hr|talent|recruiting|people|hello|contact|info)@/.test(g.email),
+        `${g.email} must come from the role-inbox list`,
+      );
+    }
+  });
+
+  test('a domain with no MX yields nothing when MX is required', async () => {
+    const guesses = await guessRoleInboxes('surely-no-such-domain-xyzzy.invalid', { max: 3, requireMx: true });
+    assert.deepEqual(guesses, []);
+  });
+});
