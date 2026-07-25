@@ -242,7 +242,12 @@ export const companies = {
   },
 
   list({ status, limit = 200, offset = 0 } = {}) {
+    /* Only bind parameters the statement actually names. node:sqlite rejects
+       an unknown named parameter outright, where better-sqlite3 ignores it —
+       so passing an unused @status silently works on one engine and throws on
+       the other. */
     const where = status ? `WHERE c.status = @status` : '';
+    const params = status ? { status, limit, offset } : { limit, offset };
     return db
       .prepare(
         `SELECT c.*,
@@ -253,7 +258,7 @@ export const companies = {
          ORDER BY c.updated_at DESC
          LIMIT @limit OFFSET @offset`,
       )
-      .all({ status, limit, offset });
+      .all(params);
   },
 };
 
@@ -443,7 +448,9 @@ export const outreach = {
   },
 
   list({ status, limit = 200 } = {}) {
+    // Same rule as companies.list — bind only what the SQL names.
     const where = status ? `WHERE o.status = @status` : '';
+    const params = status ? { status, limit } : { limit };
     return db
       .prepare(
         `SELECT o.*, ct.email, ct.name AS contact_name, c.name AS company_name, c.domain
@@ -454,7 +461,7 @@ export const outreach = {
          ORDER BY COALESCE(o.sent_at, o.queued_at) DESC
          LIMIT @limit`,
       )
-      .all({ status, limit });
+      .all(params);
   },
 };
 

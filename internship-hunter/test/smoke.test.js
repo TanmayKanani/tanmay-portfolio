@@ -464,3 +464,38 @@ describe('env writer', () => {
     assert.equal(typeof writeEnvKeys, 'function');
   });
 });
+
+/* ------------------------- list queries (both engines) ------------------ */
+
+describe('list queries', () => {
+  /* These run on whichever engine is installed. The unfiltered variants are
+     the ones the dashboard calls on load, and they used to bind a named
+     parameter the SQL did not mention — tolerated by better-sqlite3, rejected
+     outright by node:sqlite. */
+  before(() => {
+    const { id } = companies.upsert({ name: 'List Co', slug: 'list-co', domain: 'listco.io' });
+    contacts.add({ company_id: id, email: 'careers@listco.io', confidence: 0.9, verified: 1 });
+  });
+
+  test('companies.list() with no filter returns rows', () => {
+    const rows = companies.list();
+    assert.ok(rows.length > 0);
+    assert.ok('contact_count' in rows[0], 'aggregate columns should be present');
+  });
+
+  test('companies.list() accepts a status filter', () => {
+    assert.doesNotThrow(() => companies.list({ status: 'new' }));
+    assert.doesNotThrow(() => companies.list({ status: 'contacted', limit: 10, offset: 0 }));
+  });
+
+  test('outreach.list() works with and without a status', () => {
+    assert.doesNotThrow(() => outreach.list());
+    assert.doesNotThrow(() => outreach.list({ status: 'queued' }));
+    assert.doesNotThrow(() => outreach.list({ status: 'sent', limit: 5 }));
+  });
+
+  test('a status that matches nothing returns an empty array, not an error', () => {
+    assert.deepEqual(companies.list({ status: 'nonexistent-status' }), []);
+    assert.deepEqual(outreach.list({ status: 'nonexistent-status' }), []);
+  });
+});

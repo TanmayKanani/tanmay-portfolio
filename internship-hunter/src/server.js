@@ -202,7 +202,39 @@ export function createApp() {
 
   /* ------------------------------- OAuth ------------------------------- */
 
-  app.get('/auth/google', wrap((_req, res) => res.redirect(getAuthUrl())));
+  /* Saves the OAuth client credentials so the whole of Google sign-in can be
+     set up in the browser. Google requires every app that touches Gmail to
+     have its own registered client — there is no way to ship one that works
+     for everybody — but this is the last hand-editing of .env it costs. */
+  app.post('/api/gmail/oauth-credentials', wrap((req, res) => {
+    const clientId = String(req.body?.clientId || '').trim();
+    const clientSecret = String(req.body?.clientSecret || '').trim();
+    if (!clientId || !clientSecret) {
+      return res.status(400).json({ ok: false, error: 'Both the client ID and the client secret are required.' });
+    }
+    if (!/\.apps\.googleusercontent\.com$/.test(clientId)) {
+      return res.status(400).json({
+        ok: false,
+        error: 'That does not look like a Google client ID — they end in ".apps.googleusercontent.com".',
+      });
+    }
+
+    config.google.clientId = clientId;
+    config.google.clientSecret = clientSecret;
+    writeEnvKeys({ GOOGLE_CLIENT_ID: clientId, GOOGLE_CLIENT_SECRET: clientSecret });
+    log.ok('Google OAuth credentials saved');
+    // The client redirects here to run the normal consent flow.
+    return ok(res, { saved: true, authUrl: '/auth/google' });
+  }));
+
+  app.get('/auth/google', wrap((_req, res) => {
+    if (!config.google.clientId || !config.google.clientSecret) {
+      return res
+        .status(400)
+        .send(page('Google sign-in is not set up yet', 'Add your OAuth client ID and secret under Settings first.'));
+    }
+    return res.redirect(getAuthUrl());
+  }));
 
   app.get('/auth/google/callback', wrap(async (req, res) => {
     if (req.query.error) return res.status(400).send(page('Authorization declined', String(req.query.error)));

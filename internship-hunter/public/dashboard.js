@@ -400,13 +400,55 @@ function renderSettings() {
          <button class="btn btn-primary" type="submit" id="gmailSubmit">Connect Gmail</button>
        </form>
 
-       <p class="sub" style="margin-top:1rem">
-         Prefer OAuth? ${
+       <details class="alt-method"${s.gmail.oauthConfigured ? ' open' : ''}>
+         <summary>Use Google sign-in instead</summary>
+         ${
            s.gmail.oauthConfigured
-             ? '<a href="/auth/google">Connect with Google</a> &mdash; your client credentials are already in <code>.env</code>.'
-             : 'Add <code>GOOGLE_CLIENT_ID</code> and <code>GOOGLE_CLIENT_SECRET</code> to <code>.env</code> first (see the comments in that file), then reload.'
+             ? `<p class="sub" style="margin:.8rem 0">Your OAuth client is saved. This opens Google's normal consent screen.</p>
+                <a class="btn btn-primary" href="/auth/google">Continue with Google</a>`
+             : `<p class="sub" style="margin:.8rem 0">
+                  Google requires every app that sends mail to register its own OAuth client, so
+                  there is a one-time setup in Google Cloud &mdash; about ten minutes. After that
+                  it is the ordinary &ldquo;Continue with Google&rdquo; screen, and no password is stored.
+                </p>
+                <ol class="steps-list">
+                  <li>Open <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">console.cloud.google.com</a> and create a project.</li>
+                  <li>Under <b>APIs &amp; Services → Library</b>, search for <b>Gmail API</b> and enable it.</li>
+                  <li>Under <b>OAuth consent screen</b>, choose <b>External</b>, fill in the app name and your email, then add your own address under <b>Test users</b>.</li>
+                  <li>Under <b>Credentials → Create credentials → OAuth client ID</b>, choose <b>Web application</b> and add this exact redirect URI:
+                    <br><code class="copyable">${esc(location.origin)}/auth/google/callback</code>
+                  </li>
+                  <li>Copy the client ID and secret it shows you into the boxes below.</li>
+                </ol>
+                <form id="oauthForm" style="margin-top:1rem">
+                  <label class="field"><span>Client ID</span>
+                    <input class="input" type="text" id="oauthId" placeholder="…….apps.googleusercontent.com" required>
+                  </label>
+                  <label class="field"><span>Client secret</span>
+                    <input class="input" type="password" id="oauthSecret" placeholder="GOCSPX-…" required>
+                  </label>
+                  <button class="btn" type="submit" id="oauthSubmit">Save and continue with Google</button>
+                </form>`
          }
-       </p>`;
+       </details>`;
+
+  $('#oauthForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = $('#oauthSubmit');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    try {
+      const r = await api('/api/gmail/oauth-credentials', {
+        method: 'POST',
+        body: { clientId: $('#oauthId').value, clientSecret: $('#oauthSecret').value },
+      });
+      window.location.href = r.authUrl;
+    } catch (err) {
+      toast(err.message, 'error');
+      btn.disabled = false;
+      btn.textContent = 'Save and continue with Google';
+    }
+  });
 
   $('#gmailForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
