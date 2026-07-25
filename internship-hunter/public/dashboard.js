@@ -329,7 +329,7 @@ function renderActivity() {
   box.innerHTML = state.events
     .map(
       (e) => `<div class="log-row">
-        <span class="log-t">${esc(new Date(e.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }))}</span>
+        <span class="log-t">${esc(new Date(e.created_at).toLocaleTimeString('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }))}</span>
         <span class="log-l l-${esc(e.level)}">${esc(e.level)}</span>
         <span class="log-m">${esc(e.message)}</span>
       </div>`,

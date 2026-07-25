@@ -435,9 +435,10 @@ td.mono { font-family: var(--mono); font-size: .78rem; color: var(--ink-2); }
 
 .log { display: grid; font-family: var(--mono); font-size: .77rem; }
 .log-row {
-  display: grid; grid-template-columns: 4.8rem 3.6rem minmax(0, 1fr);
+  display: grid; grid-template-columns: 5.2rem 3.6rem minmax(0, 1fr);
   gap: .7rem; padding: .4rem 1.15rem; border-top: 1px solid var(--border);
 }
+.log-t, .log-l { white-space: nowrap; }
 .log > .log-row:first-child { border-top: none; }
 .log-t { color: var(--ink-3); }
 .log-l { font-weight: 700; }
