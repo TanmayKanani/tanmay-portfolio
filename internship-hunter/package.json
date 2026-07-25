@@ -8,10 +8,13 @@
     "hunter": "./bin/hunter.js"
   },
   "scripts": {
-    "start": "node src/server.js",
+    "start": "node bin/hunter.js serve",
     "hunter": "node bin/hunter.js",
     "setup": "node bin/hunter.js init",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "dev": "node bin/hunter.js serve",
+    "serve": "node bin/hunter.js serve",
+    "doctor": "node bin/hunter.js doctor"
   },
   "engines": {
     "node": ">=20"

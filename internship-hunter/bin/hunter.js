@@ -8,6 +8,10 @@
      hunter send | followup | sync | export | stats | suppress | serve
 */
 
+// Must stay first: validates Node and the native SQLite build before the
+// imports below can fail with something unreadable.
+import '../src/preflight.js';
+
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline/promises';
@@ -68,6 +72,7 @@ ${C.bold}Usage${C.reset}  node bin/hunter.js <command> [options]
 
 ${C.bold}Setup${C.reset}
   init [--resume <pdf>]   Create .env + config/profile.json, copy in your resume
+  doctor                  Check your setup and report what is not ready
   auth                    Connect your Gmail account (OAuth)
   auth --status           Show the connected account
   auth --disconnect       Forget the stored tokens
@@ -238,6 +243,50 @@ function cmdAdd() {
   if (!domain) say(`  ${C.dim}No domain given — contact discovery will skip this one.${C.reset}`);
 }
 
+/* Prints what is and isn't ready, so "it didn't run" becomes answerable. */
+async function cmdDoctor() {
+  banner();
+  const ok = (s) => `${C.green}✓${C.reset} ${s}`;
+  const no = (s) => `${C.red}✗${C.reset} ${s}`;
+  const meh = (s) => `${C.gold}•${C.reset} ${s}`;
+
+  say(`${C.bold}Runtime${C.reset}`);
+  say(`  ${ok(`Node ${process.versions.node} on ${process.platform}`)}`);
+  say(`  ${ok('SQLite engine loaded')}`);
+  say(`  ${ok(`Database at ${paths.db}`)}`);
+
+  say('');
+  say(`${C.bold}Configuration${C.reset}`);
+  say(`  ${fs.existsSync(path.join(paths.root, '.env')) ? ok('.env present') : no('.env missing — run: node bin/hunter.js init')}`);
+  say(`  ${fs.existsSync(paths.profile) ? ok('config/profile.json present') : meh('config/profile.json missing — using the example profile')}`);
+  say(`  ${fs.existsSync(paths.resume) ? ok(`Resume at ${path.relative(paths.root, paths.resume)}`) : meh('No resume — emails will send without an attachment')}`);
+  say(`  ${config.anthropic.apiKey ? ok(`Claude enabled (${config.anthropic.model})`) : meh('No ANTHROPIC_API_KEY — emails use the built-in templates')}`);
+
+  const gmail = config.google.clientId && config.google.clientSecret;
+  say(`  ${gmail ? ok('Google OAuth credentials set') : no('No Google OAuth credentials — sending is disabled')}`);
+  if (gmail) {
+    say(`  ${(await isAuthorized()) ? ok('Gmail connected') : meh('Gmail not connected — run: node bin/hunter.js auth')}`);
+  }
+
+  say('');
+  say(`${C.bold}Network${C.reset}  ${C.dim}(discovery needs these)${C.reset}`);
+  for (const host of ['https://remotive.com/api/remote-jobs?limit=1', 'https://remoteok.com/api']) {
+    const name = new URL(host).hostname;
+    try {
+      const res = await fetch(host, { signal: AbortSignal.timeout(8000) });
+      say(`  ${res.ok ? ok(`${name} reachable`) : meh(`${name} responded ${res.status}`)}`);
+    } catch (err) {
+      say(`  ${no(`${name} unreachable — ${err.message}`)}`);
+    }
+  }
+
+  say('');
+  say(`${C.bold}Dashboard${C.reset}`);
+  say(`  ${ok(`Will serve on http://${process.env.HOST || '127.0.0.1'}:${config.port}`)}`);
+  say(`  ${C.dim}Start it with:  npm run dev${C.reset}`);
+  say('');
+}
+
 async function cmdContact() {
   const email = String(flags.email || '');
   const key = String(flags.company || '');
@@ -352,6 +401,9 @@ async function main() {
     case 'contact':
       return cmdContact();
 
+    case 'doctor':
+      return cmdDoctor();
+
     case 'suppress':
       return cmdSuppress();
 
@@ -366,12 +418,31 @@ async function main() {
     case 'serve': {
       const port = Number(flags.port) || config.port;
       const host = flags.host || process.env.HOST || '127.0.0.1';
-      createApp().listen(port, host, () => {
+      const server = createApp().listen(port, host, () => {
         banner();
         say(`  ${C.green}→${C.reset} http://${host}:${port}\n`);
         for (const w of configWarnings()) log.warn(w);
         if (config.limits.dryRun) log.warn('DRY_RUN is on — no email will actually be sent.');
         if (config.scheduler.enabled) startScheduler();
+      });
+
+      // Without this, a taken port throws an unhandled 'error' event and the
+      // reader gets a stack trace instead of the one-line fix.
+      server.on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+          say(`\n  ${C.red}✗${C.reset} Port ${port} is already in use.\n`);
+          say(`    Something else is on that port — possibly an earlier copy of this app.`);
+          say(`    Start it somewhere else instead:\n`);
+          say(`        node bin/hunter.js serve --port 4301\n`);
+          say(`    ${C.dim}Or change PORT in your .env file.${C.reset}\n`);
+        } else if (err.code === 'EACCES') {
+          say(`\n  ${C.red}✗${C.reset} Not allowed to bind port ${port}.\n`);
+          say(`    Ports below 1024 need admin rights. Pick a higher one:\n`);
+          say(`        node bin/hunter.js serve --port 4300\n`);
+        } else {
+          say(`\n  ${C.red}✗${C.reset} Could not start the server — ${err.message}\n`);
+        }
+        process.exit(1);
       });
       return;
     }

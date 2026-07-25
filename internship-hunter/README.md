@@ -38,6 +38,14 @@ npm install
 node bin/hunter.js init --resume /path/to/your-resume.pdf
 ```
 
+Start the dashboard:
+
+```bash
+npm run dev            # → http://127.0.0.1:4300
+```
+
+`npm start` and `npm run serve` do the same thing.
+
 Then, in order:
 
 1. **Edit `config/profile.json`.** This is the ground truth every email is built
@@ -243,6 +251,39 @@ mornings, drafts follow-ups, and syncs replies every three hours. It
 deliberately stops there: sending stays manual unless you also set
 `AUTO_SEND=true`. Automating discovery is convenient; automating unattended
 email is a decision worth making on purpose.
+
+## If it won't start
+
+Run the built-in check first — it reports exactly what is and isn't ready:
+
+```bash
+npm run doctor
+```
+
+**`npm run dev` says "Missing script"** — you're in the wrong folder. `cd` into
+`internship-hunter` (the one containing `package.json`), not the folder you
+unzipped it into.
+
+**`Port 4300 is already in use`** — something else has the port, often an
+earlier copy of this app still running. Use another:
+
+```bash
+node bin/hunter.js serve --port 4301
+```
+
+**`better-sqlite3` fails during `npm install`** — it's a compiled module. On
+Windows, install the *Desktop development with C++* workload from the
+[Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/),
+then delete `node_modules` and run `npm install` again. On Linux you need
+`build-essential` and `python3`; on macOS, `xcode-select --install`.
+
+**Anything about `SyntaxError` or unsupported syntax** — you're on an old Node.
+This needs Node 20+. Check with `node --version` and install the current LTS
+from [nodejs.org](https://nodejs.org).
+
+**The page loads but every panel is empty** — that's correct on a fresh
+install. There's no data until you run `discover`, or add a company by hand
+with `hunter add`.
 
 ## Notes
 
