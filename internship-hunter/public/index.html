@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en" data-theme="">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light dark">
+<title>Internship Hunter</title>
+<link rel="stylesheet" href="/dashboard.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230e7c5a'/><text x='16' y='22' font-size='16' font-family='sans-serif' font-weight='bold' fill='white' text-anchor='middle'>IH</text></svg>">
+<script>
+  /* Apply the saved theme before first paint so there is no flash. */
+  try {
+    const t = localStorage.getItem('ih-theme');
+    if (t) document.documentElement.dataset.theme = t;
+  } catch (_) {}
+</script>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ─────────────────────────── sidebar ─────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="logo">
+      <span class="logo-mark" aria-hidden="true">IH</span>
+      <span class="logo-text">
+        <strong>Internship Hunter</strong>
+        <span>outreach console</span>
+      </span>
+    </div>
+
+    <nav class="nav" aria-label="Sections">
+      <span class="nav-label">Workspace</span>
+      <button class="nav-item is-active" data-view="overview">
+        <span class="ico" aria-hidden="true">◎</span> Overview
+      </button>
+      <button class="nav-item" data-view="outbox">
+        <span class="ico" aria-hidden="true">✎</span> Outbox
+        <span class="tally" id="tallyOutbox">0</span>
+      </button>
+      <button class="nav-item" data-view="sent">
+        <span class="ico" aria-hidden="true">↗</span> Sent
+        <span class="tally" id="tallySent">0</span>
+      </button>
+
+      <span class="nav-label">Data</span>
+      <button class="nav-item" data-view="companies">
+        <span class="ico" aria-hidden="true">▦</span> Companies
+        <span class="tally" id="tallyCompanies">0</span>
+      </button>
+      <button class="nav-item" data-view="contacts">
+        <span class="ico" aria-hidden="true">@</span> Contacts
+        <span class="tally" id="tallyContacts">0</span>
+      </button>
+
+      <span class="nav-label">System</span>
+      <button class="nav-item" data-view="activity">
+        <span class="ico" aria-hidden="true">≡</span> Activity
+      </button>
+      <button class="nav-item" data-view="blocked">
+        <span class="ico" aria-hidden="true">⊘</span> Blocked
+        <span class="tally" id="tallyBlocked">0</span>
+      </button>
+      <button class="nav-item" data-view="settings">
+        <span class="ico" aria-hidden="true">⚙</span> Settings
+      </button>
+    </nav>
+
+    <div class="sidebar-foot">
+      <p class="who" id="who">
+        <strong>Not connected</strong>
+        Connect Gmail to start sending
+      </p>
+    </div>
+  </aside>
+
+  <!-- ──────────────────────────── main ───────────────────────────── -->
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">☰</button>
+      <h2 id="viewTitle">Overview</h2>
+      <span class="chip" id="chipMode">—</span>
+      <span class="chip" id="chipGmail">Gmail</span>
+      <span class="chip" id="chipAi">AI</span>
+      <button class="btn btn-quiet btn-sm" id="themeBtn" aria-label="Switch theme" title="Switch theme"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg></button>
+      <button class="btn btn-quiet btn-sm" id="refreshBtn" aria-label="Refresh" title="Refresh"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
+    </header>
+
+    <div class="content">
+
+      <div class="notice" id="notice" hidden></div>
+
+      <!-- ── Overview ── -->
+      <section class="view is-active" id="view-overview">
+        <div class="stat-grid" id="stats"></div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Pipeline</h3>
+            <span class="sub" id="capNote"></span>
+          </div>
+          <div class="card-body"><div class="funnel" id="funnel"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Run a stage</h3>
+            <span class="sub">Every stage is safe to re-run — duplicates are rejected by the database.</span>
+          </div>
+          <div class="card-body">
+            <div class="steps" id="steps">
+              <button class="step" data-task="discovery">
+                <span class="step-n">1</span>
+                <span class="step-body"><span class="step-t">Find companies</span><span class="step-d">Pull remote intern &amp; junior roles from the job boards</span></span>
+              </button>
+              <button class="step" data-task="contacts">
+                <span class="step-n">2</span>
+                <span class="step-body"><span class="step-t">Find HR emails</span><span class="step-d">Read each company's published careers &amp; contact pages</span></span>
+              </button>
+              <button class="step" data-task="queue">
+                <span class="step-n">3</span>
+                <span class="step-body"><span class="step-t">Draft emails</span><span class="step-d">Personalise a message per company into the outbox</span></span>
+              </button>
+              <button class="step" data-task="send">
+                <span class="step-n">4</span>
+                <span class="step-body"><span class="step-t">Send outbox</span><span class="step-d">Deliver through your own Gmail, throttled and capped</span></span>
+              </button>
+              <button class="step" data-task="followup">
+                <span class="step-n">5</span>
+                <span class="step-body"><span class="step-t">Draft follow-ups</span><span class="step-d">Nudge silent threads after 7 and 14 days</span></span>
+              </button>
+              <button class="step" data-task="sync">
+                <span class="step-n">↻</span>
+                <span class="step-body"><span class="step-t">Sync replies</span><span class="step-d">Pull replies and bounces back from Gmail</span></span>
+              </button>
+            </div>
+
+            <div class="job" id="job" hidden>
+              <span class="spin" aria-hidden="true"></span>
+              <span id="jobLabel">Working…</span>
+            </div>
+
+            <div class="switch-row">
+              <label class="switch">
+                <input type="checkbox" id="liveSend">
+                <span class="switch-ui" aria-hidden="true"></span>
+                <span class="switch-txt">Send for real</span>
+              </label>
+              <span class="sub" id="liveHint">Off — “Send outbox” only simulates delivery.</span>
+              <span style="flex:1"></span>
+              <button class="btn btn-sm" id="exportBtn">Export Excel tracker</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Outbox ── -->
+      <section class="view" id="view-outbox">
+        <div class="card">
+          <div class="card-head">
+            <h3>Outbox</h3>
+            <span class="sub">Click a draft to read and edit it before anything is sent.</span>
+            <span class="right"><button class="btn btn-primary btn-sm" data-task="send">Send outbox</button></span>
+          </div>
+          <div class="card-body flush"><div class="rows" id="outboxRows"></div></div>
+        </div>
+      </section>
+
+      <!-- ── Sent ── -->
+      <section class="view" id="view-sent">
+        <div class="card">
+          <div class="card-head">
+            <h3>Sent</h3>
+            <span class="sub">Threads Gmail has accepted, plus anything that came back.</span>
+            <span class="right"><button class="btn btn-sm" data-task="sync">Sync replies</button></span>
+          </div>
+          <div class="card-body flush"><div class="rows" id="sentRows"></div></div>
+        </div>
+      </section>
+
+      <!-- ── Companies ── -->
+      <section class="view" id="view-companies">
+        <div class="card">
+          <div class="card-head">
+            <h3>Companies</h3>
+            <span class="sub">Ranked by fit against your profile.</span>
+          </div>
+          <div class="card-body flush">
+            <div class="tscroll">
+              <table id="companiesTable">
+                <thead><tr>
+                  <th>Company</th><th>Domain</th><th>Role seen</th>
+                  <th class="num">Fit</th><th class="num">Contacts</th><th class="num">Sent</th><th>Status</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Contacts ── -->
+      <section class="view" id="view-contacts">
+        <div class="card">
+          <div class="card-head">
+            <h3>Contacts</h3>
+            <span class="sub">Confidence reflects where the address came from — published beats inferred.</span>
+          </div>
+          <div class="card-body flush">
+            <div class="tscroll">
+              <table id="contactsTable">
+                <thead><tr>
+                  <th>Email</th><th>Name</th><th>Company</th>
+                  <th class="num">Confidence</th><th>MX</th><th>Source</th><th>Status</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Activity ── -->
+      <section class="view" id="view-activity">
+        <div class="card">
+          <div class="card-head">
+            <h3>Activity</h3>
+            <span class="sub">Everything the tool has done, newest first.</span>
+          </div>
+          <div class="card-body flush"><div class="log" id="activityLog"></div></div>
+        </div>
+      </section>
+
+      <!-- ── Blocked ── -->
+      <section class="view" id="view-blocked">
+        <div class="card">
+          <div class="card-head">
+            <h3>Blocked</h3>
+            <span class="sub">Excluded from every run, including drafts already in the outbox.</span>
+          </div>
+          <div class="card-body">
+            <form class="inline-form" id="blockForm">
+              <input class="input" type="text" id="blockValue" placeholder="someone@company.com  or  company.com" aria-label="Address or domain to block">
+              <select class="select" id="blockKind" aria-label="Block type">
+                <option value="email">Email</option>
+                <option value="domain">Domain</option>
+              </select>
+              <button class="btn btn-danger" type="submit">Block</button>
+            </form>
+          </div>
+          <div class="card-body flush"><div class="rows" id="blockedRows"></div></div>
+        </div>
+      </section>
+
+      <!-- ── Settings ── -->
+      <section class="view" id="view-settings">
+        <div class="card">
+          <div class="card-head"><h3>Gmail</h3></div>
+          <div class="card-body" id="gmailBox"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3>Guardrails</h3>
+            <span class="sub">Read from <code>.env</code> at start-up — edit the file and restart to change them.</span>
+          </div>
+          <div class="card-body"><dl class="kv" id="limitsBox"></dl></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Profile &amp; resume</h3></div>
+          <div class="card-body"><dl class="kv" id="profileBox"></dl></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- ───────────────────────── draft editor ───────────────────────── -->
+<dialog class="sheet" id="editor">
+  <div class="sheet-head">
+    <h3 id="editorTo">Draft</h3>
+    <button class="btn btn-quiet btn-sm" id="editorClose" aria-label="Close">✕</button>
+  </div>
+  <div class="sheet-body">
+    <label class="field"><span>Subject</span><input class="input" type="text" id="editorSubject"></label>
+    <label class="field"><span>Body</span><textarea class="textarea" id="editorBody" rows="16"></textarea></label>
+  </div>
+  <div class="sheet-foot">
+    <button class="btn btn-danger btn-sm" id="editorDiscard">Discard draft</button>
+    <span class="grow"></span>
+    <button class="btn" id="editorCancel">Cancel</button>
+    <button class="btn btn-primary" id="editorSave">Save changes</button>
+  </div>
+</dialog>
+
+<!-- ───────────────────────── read-only view ─────────────────────── -->
+<dialog class="sheet" id="viewer">
+  <div class="sheet-head">
+    <h3 id="viewerTo">Message</h3>
+    <button class="btn btn-quiet btn-sm" id="viewerClose" aria-label="Close">✕</button>
+  </div>
+  <div class="sheet-body">
+    <dl class="kv" id="viewerMeta"></dl>
+    <label class="field" style="margin-top:1rem"><span>Message</span>
+      <textarea class="textarea" id="viewerBody" rows="16" readonly></textarea>
+    </label>
+  </div>
+  <div class="sheet-foot"><span class="grow"></span><button class="btn" id="viewerDone">Close</button></div>
+</dialog>
+
+<script type="module" src="/dashboard.js"></script>
+</body>
+</html>

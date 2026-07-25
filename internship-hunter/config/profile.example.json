@@ -1,0 +1,60 @@
+{
+  "name": "Tanmay Kanani",
+  "email": "tanmaykanani8@gmail.com",
+  "headline": "CS undergrad · full-stack developer · competitive programmer",
+  "shortBio": "a Computer Science undergraduate who builds full-stack web applications and competes in algorithmic programming on LeetCode, Codeforces and CodeChef",
+  "education": "B.Tech, Computer Science",
+  "location": "India (open to remote)",
+  "availability": "Available for remote internships — flexible on start date",
+
+  "skills": [
+    "JavaScript",
+    "TypeScript",
+    "Python",
+    "C++",
+    "React",
+    "Node.js",
+    "Express",
+    "MongoDB",
+    "MySQL",
+    "HTML",
+    "CSS",
+    "Git",
+    "REST APIs",
+    "data structures",
+    "algorithms"
+  ],
+
+  "targetRoles": [
+    "software engineer",
+    "software developer",
+    "full stack",
+    "frontend",
+    "backend",
+    "web developer"
+  ],
+
+  "highlights": [
+    "Built and shipped a fully custom animated portfolio in vanilla JS with live competitive-programming stats and a serverless API layer",
+    "Solved several hundred algorithmic problems across LeetCode, Codeforces and CodeChef, with a 100+ day solving streak",
+    "Comfortable across the stack — React and vanilla JS on the front end, Node/Express and SQL or MongoDB behind it",
+    "Write code that ships: performance budgets, accessibility, and graceful degradation when an upstream API is down"
+  ],
+
+  "recentWins": [
+    "I shipped a new project and pushed my solving streak past 100 days"
+  ],
+
+  "portfolio": "https://github.com/TanmayKanani",
+  "github": "https://github.com/TanmayKanani",
+  "linkedin": "https://www.linkedin.com/in/tanmay-kanani-163875333/",
+  "leetcode": "https://leetcode.com/u/Tanmay_Kanani/",
+  "codeforces": "https://codeforces.com/profile/tanmay.k",
+
+  "_notes": [
+    "Copy this to config/profile.json and edit it — `hunter init` does that for you.",
+    "Everything here is fed to the model as ground truth. It is explicitly told not to invent anything beyond these fields, so vague input produces vague emails.",
+    "highlights: 3-4 concrete, verifiable things. Numbers beat adjectives.",
+    "recentWins: used in follow-ups as a reason to write again. Keep it current or leave it empty."
+  ]
+}

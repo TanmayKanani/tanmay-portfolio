@@ -1,0 +1,29 @@
+{
+  "name": "internship-hunter",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Automated, personalized internship outreach — discovery, HR contacts, Gmail sending, tracking, follow-ups and a dashboard.",
+  "bin": {
+    "hunter": "./bin/hunter.js"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "hunter": "node bin/hunter.js",
+    "setup": "node bin/hunter.js init",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0",
+    "better-sqlite3": "^11.10.0",
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.4.7",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.2",
+    "googleapis": "^144.0.0",
+    "node-cron": "^3.0.3"
+  }
+}

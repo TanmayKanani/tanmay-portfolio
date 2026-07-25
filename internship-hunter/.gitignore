@@ -1,0 +1,15 @@
+# secrets & credentials
+.env
+data/google-tokens.json
+
+# runtime state — the database holds real contact data, keep it local
+data/
+node_modules/
+
+# your edited profile and resume are personal documents
+config/profile.json
+assets/*
+!assets/.gitkeep
+
+*.log
+.DS_Store
