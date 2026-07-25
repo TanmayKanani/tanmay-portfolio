@@ -2,14 +2,13 @@
    here by UNIQUE constraints rather than by application logic, so a race or a
    re-run can never produce two emails to the same person. */
 
-import Database from 'better-sqlite3';
+import { openDatabase } from './sqlite.js';
 import { paths } from './config.js';
 import { log, setEventSink } from './logger.js';
 import { normalizeEmail, normalizeDomain, nowIso, daysAgoIso, todayKey } from './util.js';
 
-export const db = new Database(paths.db);
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+// Picks better-sqlite3 when it's usable, Node's built-in SQLite otherwise.
+export const db = openDatabase(paths.db);
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS companies (

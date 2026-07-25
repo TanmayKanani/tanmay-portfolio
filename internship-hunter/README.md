@@ -221,6 +221,8 @@ internship-hunter/
 ├── public/                    dashboard — html, css, js, no build step
 ├── test/smoke.test.js         34 tests, no network required
 └── src/
+    ├── cli.js                 every command (bin/hunter.js is a thin launcher)
+    ├── sqlite.js              driver selection: better-sqlite3 or node:sqlite
     ├── config.js              env parsing, paths, guardrails
     ├── db.js                  schema + every query; dedupe lives here
     ├── jobs.js                background job runner for the dashboard
@@ -271,11 +273,23 @@ earlier copy of this app still running. Use another:
 node bin/hunter.js serve --port 4301
 ```
 
-**`better-sqlite3` fails during `npm install`** — it's a compiled module. On
-Windows, install the *Desktop development with C++* workload from the
-[Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/),
-then delete `node_modules` and run `npm install` again. On Linux you need
-`build-essential` and `python3`; on macOS, `xcode-select --install`.
+**`gyp ERR!` / `better-sqlite3` fails during `npm install`** — harmless, and
+the app still runs. `better-sqlite3` is a compiled module with no prebuilt
+binary for very new Node releases, so npm tries to compile it and fails
+without a C++ toolchain. It's an *optional* dependency: when it's unavailable
+the app uses the SQLite engine built into Node instead, which needs no
+compiler. `npm run doctor` shows which one is active.
+
+If you'd rather have the compiled one, either install Node 22 LTS (which has a
+prebuilt binary) or add a toolchain: on Windows the *Desktop development with
+C++* workload from the
+[Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/);
+on Linux `build-essential` and `python3`; on macOS `xcode-select --install`.
+
+**`Cannot find package '...'`** — `npm install` didn't finish. Scroll up in
+that install output; the *first* error is the real one. Then reinstall from
+scratch: delete `node_modules` and `package-lock.json` and run `npm install`
+again.
 
 **Anything about `SyntaxError` or unsupported syntax** — you're on an old Node.
 This needs Node 20+. Check with `node --version` and install the current LTS
@@ -291,4 +305,7 @@ with `hunter add`.
   `DASHBOARD_TOKEN` — the API can send mail on your behalf.
 - `data/` holds real people's contact details. It's gitignored; keep it that
   way.
-- Requires Node 20+ (developed on 22).
+- Requires Node 20+ (developed on 22, tested on the built-in SQLite path too).
+- The database engine is chosen at startup: `better-sqlite3` when it's
+  installed, otherwise Node's built-in `node:sqlite`. Both pass the full test
+  suite; `npm run doctor` tells you which is in use.
