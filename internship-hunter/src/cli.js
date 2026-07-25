@@ -139,6 +139,62 @@ async function cmdInit() {
   say('  6. node bin/hunter.js send        (add --live when you are happy)');
 }
 
+/* Start the dashboard, stepping past a busy port rather than refusing to run.
+   A stale copy of this app holding the usual port is the common case, and
+   failing there is worse than useless: the browser still shows that older
+   build, so the reader concludes the new one is broken. */
+function cmdServe() {
+  const requested = Number(flags.port) || config.port;
+  const host = flags.host || process.env.HOST || '127.0.0.1';
+  const MAX_TRIES = 10;
+
+  const attempt = (port, tries = 0) => {
+    const server = createApp().listen(port, host, () => {
+      banner();
+      say(`  ${C.green}→${C.reset} http://${host}:${port}\n`);
+
+      if (port !== requested) {
+        say(`  ${C.gold}!${C.reset} Port ${requested} was busy, so this is running on ${port} instead.`);
+        say(`    ${C.dim}Something is already on ${requested} — very likely an older copy of`);
+        say(`    this app. Whatever is open at :${requested} in your browser is that older`);
+        say(`    copy, with its own database. Close it, and use the address above.${C.reset}`);
+        if (config.google.clientId) {
+          say(`    ${C.gold}Google sign-in is registered for port ${requested}${C.reset}, so it will not`);
+          say(`    ${C.dim}work here. Free that port, or add http://${host}:${port}/auth/google/callback`);
+          say(`    as another redirect URI in Google Cloud.${C.reset}`);
+        }
+        say('');
+      }
+
+      for (const w of configWarnings()) log.warn(w);
+      if (config.limits.dryRun) log.warn('DRY_RUN is on — no email will actually be sent.');
+      if (config.scheduler.enabled) startScheduler();
+    });
+
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE' && tries < MAX_TRIES) {
+        server.close();
+        attempt(port + 1, tries + 1);
+        return;
+      }
+      if (err.code === 'EADDRINUSE') {
+        say(`\n  ${C.red}✗${C.reset} Ports ${requested}–${port} are all in use.\n`);
+        say(`    Pick a free one explicitly:\n`);
+        say(`        node bin/hunter.js serve --port 5000\n`);
+      } else if (err.code === 'EACCES') {
+        say(`\n  ${C.red}✗${C.reset} Not allowed to bind port ${port}.\n`);
+        say(`    Ports below 1024 need administrator rights. Pick a higher one:\n`);
+        say(`        node bin/hunter.js serve --port 4300\n`);
+      } else {
+        say(`\n  ${C.red}✗${C.reset} Could not start the server — ${err.message}\n`);
+      }
+      process.exit(1);
+    });
+  };
+
+  attempt(requested);
+}
+
 async function cmdAuth() {
   if (flags.disconnect) {
     disconnect();
@@ -456,37 +512,8 @@ async function main() {
     case 'stats':
       return cmdStats();
 
-    case 'serve': {
-      const port = Number(flags.port) || config.port;
-      const host = flags.host || process.env.HOST || '127.0.0.1';
-      const server = createApp().listen(port, host, () => {
-        banner();
-        say(`  ${C.green}→${C.reset} http://${host}:${port}\n`);
-        for (const w of configWarnings()) log.warn(w);
-        if (config.limits.dryRun) log.warn('DRY_RUN is on — no email will actually be sent.');
-        if (config.scheduler.enabled) startScheduler();
-      });
-
-      // Without this, a taken port throws an unhandled 'error' event and the
-      // reader gets a stack trace instead of the one-line fix.
-      server.on('error', (err) => {
-        if (err.code === 'EADDRINUSE') {
-          say(`\n  ${C.red}✗${C.reset} Port ${port} is already in use.\n`);
-          say(`    Something else is on that port — possibly an earlier copy of this app.`);
-          say(`    Start it somewhere else instead:\n`);
-          say(`        node bin/hunter.js serve --port 4301\n`);
-          say(`    ${C.dim}Or change PORT in your .env file.${C.reset}\n`);
-        } else if (err.code === 'EACCES') {
-          say(`\n  ${C.red}✗${C.reset} Not allowed to bind port ${port}.\n`);
-          say(`    Ports below 1024 need admin rights. Pick a higher one:\n`);
-          say(`        node bin/hunter.js serve --port 4300\n`);
-        } else {
-          say(`\n  ${C.red}✗${C.reset} Could not start the server — ${err.message}\n`);
-        }
-        process.exit(1);
-      });
-      return;
-    }
+    case 'serve':
+      return cmdServe();
 
     case 'help':
     case '--help':

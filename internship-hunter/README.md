@@ -292,12 +292,23 @@ npm run doctor
 `internship-hunter` (the one containing `package.json`), not the folder you
 unzipped it into.
 
-**`Port 4300 is already in use`** — something else has the port, often an
-earlier copy of this app still running. Use another:
+**"Port 4300 was busy, so this is running on 4301 instead."** — not an error;
+the server steps to the next free port on its own. But it means something else
+already holds 4300, and that is almost always an older copy of this app left
+running from a previous session. Whatever is open at `:4300` in your browser is
+*that* copy, reading *its* database — so close it and use the address the
+banner printed.
 
-```bash
-node bin/hunter.js serve --port 4301
+To free the port instead:
+
 ```
+Windows:  netstat -ano | findstr :4300      then  taskkill /PID <pid> /F
+macOS/Linux:  lsof -ti :4300 | xargs kill
+```
+
+Note that Google sign-in, if you set it up, is registered against a specific
+port. If the server shifts, either free the original port or add the new
+callback URL as a second redirect URI in Google Cloud.
 
 **`gyp ERR!` / `better-sqlite3` fails during `npm install`** — harmless, and
 the app still runs. `better-sqlite3` is a compiled module with no prebuilt
