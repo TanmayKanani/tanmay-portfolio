@@ -46,6 +46,16 @@ export const config = {
   port: num(process.env.PORT, 4300),
   baseUrl: process.env.BASE_URL || `http://localhost:${num(process.env.PORT, 4300)}`,
 
+  /* The quick path: a Gmail app password, used over SMTP and IMAP. Needs
+     2-Step Verification on the account but no Google Cloud project. */
+  smtp: {
+    address: (process.env.GMAIL_ADDRESS || '').trim(),
+    // Google displays app passwords in four groups of four; the spaces are
+    // presentational and must not reach the SMTP handshake.
+    appPassword: (process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, ''),
+    name: (process.env.GMAIL_SENDER_NAME || '').trim(),
+  },
+
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID || '',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
@@ -142,8 +152,11 @@ export function loadProfile() {
 
 export function configWarnings() {
   const warn = [];
-  if (!config.google.clientId || !config.google.clientSecret) {
-    warn.push('Gmail OAuth is not configured (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET).');
+  // Either transport counts as connected; only complain when neither is set up.
+  const hasAppPassword = config.smtp.address && config.smtp.appPassword;
+  const hasOAuth = config.google.clientId && config.google.clientSecret;
+  if (!hasAppPassword && !hasOAuth) {
+    warn.push('Gmail is not connected — run "node bin/hunter.js auth" (about two minutes).');
   }
   if (!config.anthropic.apiKey) {
     warn.push('ANTHROPIC_API_KEY is not set — emails will fall back to templates.');
@@ -158,4 +171,21 @@ export function configWarnings() {
     );
   }
   return warn;
+}
+
+/* Set keys in .env in place, preserving comments, ordering and anything the
+   reader customised. Only the named keys are touched. Used by `hunter auth`
+   and by the dashboard's Gmail setup, so neither has to hand-edit the file. */
+export function writeEnvKeys(updates) {
+  const file = path.join(ROOT, '.env');
+  let text = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+
+  for (const [key, value] of Object.entries(updates)) {
+    const line = `${key}=${value}`;
+    const existing = new RegExp(`^${key}=.*$`, 'm');
+    text = existing.test(text) ? text.replace(existing, line) : `${text.replace(/\n*$/, '\n')}${line}\n`;
+  }
+
+  // Contains a password once Gmail is connected — keep it owner-readable only.
+  fs.writeFileSync(file, text, { mode: 0o600 });
 }

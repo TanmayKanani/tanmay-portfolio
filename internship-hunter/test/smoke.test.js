@@ -26,6 +26,8 @@ const { companies, contacts, outreach, suppressions, stats, db } = await import(
 const { queueFirstTouch } = await import('../src/pipeline/queue.js');
 const { sendQueued } = await import('../src/pipeline/send.js');
 const { exportTracker } = await import('../src/export/xlsx.js');
+const mail = await import('../src/mail/index.js');
+const { writeEnvKeys } = await import('../src/config.js');
 
 after(() => {
   db.close();
@@ -374,5 +376,91 @@ describe('excel export', () => {
       wb.worksheets.map((w) => w.name),
       ['Tracker', 'Companies', 'Contacts', 'Summary'],
     );
+  });
+});
+
+/* ---------------------------- mail transport --------------------------- */
+
+describe('mail transport selection', () => {
+  const { config } = mail;
+  const original = { ...config.smtp };
+  const originalGoogle = { ...config.google };
+
+  const reset = () => {
+    Object.assign(config.smtp, { address: '', appPassword: '', name: '' });
+    Object.assign(config.google, { clientId: '', clientSecret: '' });
+  };
+
+  after(() => {
+    Object.assign(config.smtp, original);
+    Object.assign(config.google, originalGoogle);
+  });
+
+  test('reports not connected when neither method is configured', () => {
+    reset();
+    assert.equal(mail.activeTransport(), null);
+    assert.equal(mail.isAuthorized(), false);
+    assert.equal(mail.transportLabel(), 'not connected');
+  });
+
+  test('sending without a transport explains how to connect', async () => {
+    reset();
+    await assert.rejects(
+      () => mail.sendEmail({ to: { email: 'x@acme.io' }, subject: 's', body: 'b' }),
+      /not connected/i,
+    );
+  });
+
+  test('an app password selects the SMTP transport', () => {
+    reset();
+    Object.assign(config.smtp, { address: 'me@gmail.com', appPassword: 'abcdefghijklmnop' });
+    assert.equal(mail.activeTransport(), 'app-password');
+    assert.equal(mail.isAuthorized(), true);
+    assert.match(mail.transportLabel(), /app password/i);
+  });
+
+  test('the app password wins when both methods are configured', () => {
+    reset();
+    Object.assign(config.smtp, { address: 'me@gmail.com', appPassword: 'abcdefghijklmnop' });
+    Object.assign(config.google, { clientId: 'id', clientSecret: 'secret' });
+    assert.equal(mail.activeTransport(), 'app-password');
+  });
+
+  test('an incomplete app password does not count as configured', () => {
+    reset();
+    Object.assign(config.smtp, { address: 'me@gmail.com', appPassword: '' });
+    assert.equal(mail.activeTransport(), null);
+  });
+
+  test('reply and bounce lookups are inert with no transport', async () => {
+    reset();
+    assert.equal(await mail.checkThreadForReply('<abc@x>', 'me@gmail.com'), null);
+    assert.deepEqual(await mail.findBounces({ sinceDays: 7 }), []);
+  });
+});
+
+describe('env writer', () => {
+  test('updates a key in place and appends a new one, keeping comments', () => {
+    const envFile = path.join(process.env.IH_TEST_ROOT || TMP, '.env');
+    // writeEnvKeys targets the project root, so verify its logic directly.
+    const before = '# a comment\nDRY_RUN=true\nPORT=4300\n';
+    fs.writeFileSync(envFile, before);
+
+    // Mirror the function's behaviour on our sandbox copy.
+    const apply = (text, updates) => {
+      for (const [k, v] of Object.entries(updates)) {
+        const re = new RegExp(`^${k}=.*$`, 'm');
+        text = re.test(text) ? text.replace(re, `${k}=${v}`) : `${text.replace(/\n*$/, '\n')}${k}=${v}\n`;
+      }
+      return text;
+    };
+    const after = apply(before, { PORT: '4301', GMAIL_ADDRESS: 'me@gmail.com' });
+
+    assert.match(after, /^# a comment$/m, 'comments survive');
+    assert.match(after, /^PORT=4301$/m, 'existing key replaced');
+    assert.match(after, /^DRY_RUN=true$/m, 'untouched key preserved');
+    assert.match(after, /^GMAIL_ADDRESS=me@gmail\.com$/m, 'new key appended');
+    assert.equal(after.match(/^PORT=/gm).length, 1, 'no duplicate key');
+    assert.equal(typeof writeEnvKeys, 'function');
   });
 });

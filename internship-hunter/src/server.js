@@ -6,10 +6,10 @@
 import express from 'express';
 import path from 'node:path';
 import fs from 'node:fs';
-import { config, paths, configWarnings, loadProfile } from './config.js';
+import { config, paths, configWarnings, loadProfile, writeEnvKeys } from './config.js';
 import { log } from './logger.js';
 import { companies, contacts, outreach, suppressions, stats, recentEvents, settings, db } from './db.js';
-import { getAuthUrl, exchangeCode, isAuthorized, disconnect } from './mail/gmail.js';
+import { getAuthUrl, exchangeCode, isAuthorized, disconnect, transportLabel, verifyAppPassword } from './mail/index.js';
 import { senderIdentity } from './pipeline/send.js';
 import { runDiscovery } from './discovery/index.js';
 import { runContactDiscovery } from './contacts/index.js';
@@ -53,7 +53,13 @@ export function createApp() {
     const profile = loadProfile();
     ok(res, {
       stats: stats(),
-      gmail: { connected: isAuthorized(), identity: await senderIdentity() },
+      gmail: {
+        connected: isAuthorized(),
+        identity: await senderIdentity(),
+        transport: transportLabel(),
+        // Lets Settings show the right setup path instead of a dead link.
+        oauthConfigured: Boolean(config.google.clientId && config.google.clientSecret),
+      },
       ai: { enabled: Boolean(config.anthropic.apiKey), model: config.anthropic.model },
       limits: config.limits,
       followUp: config.followUp,
@@ -121,6 +127,34 @@ export function createApp() {
     if (row.status !== 'queued') return res.status(400).json({ ok: false, error: 'only queued drafts can be discarded' });
     db.prepare(`DELETE FROM outreach WHERE id = ?`).run(row.id);
     return ok(res, { deleted: row.id });
+  }));
+
+  /* ---------------------------- connect Gmail --------------------------- */
+
+  /* Saves an app password to .env after proving it works, so the whole setup
+     can happen in the browser. Localhost-only unless a token is configured. */
+  app.post('/api/gmail/app-password', wrap(async (req, res) => {
+    const address = String(req.body?.address || '').trim();
+    const password = String(req.body?.password || '').replace(/\s+/g, '');
+    if (!address || !password) {
+      return res.status(400).json({ ok: false, error: 'Both the address and the app password are required.' });
+    }
+
+    const previous = { ...config.smtp };
+    config.smtp.address = address;
+    config.smtp.appPassword = password;
+    try {
+      await verifyAppPassword();
+    } catch (err) {
+      Object.assign(config.smtp, previous);
+      // smtp.js already distinguishes a rejected password from a blocked
+      // network; overriding it here would give the wrong advice.
+      return res.status(400).json({ ok: false, error: err.message });
+    }
+
+    writeEnvKeys({ GMAIL_ADDRESS: address, GMAIL_APP_PASSWORD: password });
+    log.ok(`Gmail connected as ${address}`);
+    return ok(res, { connected: true, address });
   }));
 
   /* --------------------------- suppressions ---------------------------- */

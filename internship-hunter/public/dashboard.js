@@ -108,6 +108,14 @@ function showView(name) {
 
 $$('.nav-item').forEach((btn) => btn.addEventListener('click', () => showView(btn.dataset.view)));
 
+// "Connect Gmail →" in the sidebar jumps to Settings rather than a dead URL.
+document.addEventListener('click', (e) => {
+  const link = e.target.closest('[data-goto]');
+  if (!link) return;
+  e.preventDefault();
+  showView(link.dataset.goto);
+});
+
 $('#menuBtn').addEventListener('click', () => {
   const bar = $('#sidebar');
   bar.classList.toggle('is-open');
@@ -139,6 +147,7 @@ function renderStatus() {
 
   const g = $('#chipGmail');
   g.textContent = gmail.connected ? gmail.identity?.email || 'Gmail connected' : 'Gmail off';
+  g.title = gmail.connected ? `Sending via ${gmail.transport}` : 'Connect Gmail in Settings';
   g.className = `chip ${gmail.connected ? 'chip-ok' : 'chip-bad'}`;
 
   const a = $('#chipAi');
@@ -147,7 +156,7 @@ function renderStatus() {
 
   $('#who').innerHTML = gmail.connected
     ? `<strong>${esc(gmail.identity?.email || 'Connected')}</strong>Sending as ${esc(s.profile.name)}`
-    : `<strong>Not connected</strong><a href="/auth/google">Connect Gmail →</a>`;
+    : `<strong>Not connected</strong><a href="#" data-goto="settings">Connect Gmail →</a>`;
 
   // warnings
   const notice = $('#notice');
@@ -363,11 +372,61 @@ function renderSettings() {
   $('#gmailBox').innerHTML = s.gmail.connected
     ? `<dl class="kv">
          <dt>Account</dt><dd>${esc(s.gmail.identity?.email || 'connected')}</dd>
-         <dt>Scopes</dt><dd>gmail.send, gmail.readonly</dd>
+         <dt>Method</dt><dd>${esc(s.gmail.transport)}</dd>
        </dl>
        <div style="margin-top:1rem"><button class="btn btn-danger btn-sm" id="disconnectBtn">Disconnect Gmail</button></div>`
-    : `<p class="sub" style="margin-bottom:.9rem">Mail is sent through your own Gmail account over OAuth. Nothing is relayed through a third party.</p>
-       <a class="btn btn-primary" href="/auth/google">Connect Gmail</a>`;
+    : `<p class="sub" style="margin-bottom:1rem">
+         Mail goes out through your own Gmail account. Nothing is relayed through a third party,
+         and your password is stored only in <code>.env</code> on this machine.
+       </p>
+
+       <ol class="steps-list">
+         <li>Turn on 2-Step Verification &mdash;
+           <a href="https://myaccount.google.com/security" target="_blank" rel="noopener">myaccount.google.com/security</a>
+         </li>
+         <li>Create an app password (choose &ldquo;Mail&rdquo;, name it anything) &mdash;
+           <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">myaccount.google.com/apppasswords</a>
+         </li>
+         <li>Paste the 16 characters below.</li>
+       </ol>
+
+       <form id="gmailForm" style="margin-top:1rem">
+         <label class="field"><span>Your Gmail address</span>
+           <input class="input" type="email" id="gmailAddress" placeholder="you@gmail.com" autocomplete="username" required>
+         </label>
+         <label class="field"><span>App password</span>
+           <input class="input" type="password" id="gmailPassword" placeholder="abcd efgh ijkl mnop" autocomplete="off" required>
+         </label>
+         <button class="btn btn-primary" type="submit" id="gmailSubmit">Connect Gmail</button>
+       </form>
+
+       <p class="sub" style="margin-top:1rem">
+         Prefer OAuth? ${
+           s.gmail.oauthConfigured
+             ? '<a href="/auth/google">Connect with Google</a> &mdash; your client credentials are already in <code>.env</code>.'
+             : 'Add <code>GOOGLE_CLIENT_ID</code> and <code>GOOGLE_CLIENT_SECRET</code> to <code>.env</code> first (see the comments in that file), then reload.'
+         }
+       </p>`;
+
+  $('#gmailForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = $('#gmailSubmit');
+    btn.disabled = true;
+    btn.textContent = 'Checking with Google…';
+    try {
+      const r = await api('/api/gmail/app-password', {
+        method: 'POST',
+        body: { address: $('#gmailAddress').value, password: $('#gmailPassword').value },
+      });
+      toast(`Connected as ${r.address}`, 'ok');
+      load();
+      renderSettings();
+    } catch (err) {
+      toast(err.message, 'error');
+      btn.disabled = false;
+      btn.textContent = 'Connect Gmail';
+    }
+  });
 
   $('#disconnectBtn')?.addEventListener('click', async () => {
     if (!confirm('Forget the stored Gmail tokens?')) return;

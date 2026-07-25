@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import { config, paths, loadProfile } from '../config.js';
 import { log } from '../logger.js';
 import { outreach, contacts, companies, suppressions } from '../db.js';
-import { sendEmail, isAuthorized, getAuthorizedProfile } from '../mail/gmail.js';
+import { sendEmail, isAuthorized, getAuthorizedProfile } from '../mail/index.js';
 import { sleep, jitter } from '../util.js';
 
 /**
@@ -42,6 +42,11 @@ export async function sendQueued(opts = {}) {
 
   const profile = loadProfile();
   const attachments = fs.existsSync(paths.resume) ? [paths.resume] : [];
+  /* Send the resume under the candidate's name so it is identifiable once
+     saved out of the inbox, whatever the file is called on disk. */
+  const attachmentNames = attachments.length
+    ? { [paths.resume]: `${String(profile.name || 'Resume').replace(/[^\w.-]+/g, '_')}_Resume.pdf` }
+    : {};
   if (!attachments.length) log.warn(`No resume at ${paths.resume} — sending without an attachment.`);
 
   log.info(
@@ -81,6 +86,7 @@ export async function sendQueued(opts = {}) {
         subject: item.subject,
         body: item.body,
         attachments,
+        attachmentNames,
         threadId: item.thread_id || undefined,
         inReplyTo: item.rfc_message_id || undefined,
         references: item.rfc_message_id ? [item.rfc_message_id] : [],

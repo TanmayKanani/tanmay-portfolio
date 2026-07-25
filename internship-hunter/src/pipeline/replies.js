@@ -7,7 +7,7 @@
 
 import { log } from '../logger.js';
 import { outreach, contacts, companies, suppressions, db } from '../db.js';
-import { checkThreadForReply, findBounces, isAuthorized, getAuthorizedProfile } from '../mail/gmail.js';
+import { checkThreadForReply, findBounces, isAuthorized, getAuthorizedProfile } from '../mail/index.js';
 import { sleep } from '../util.js';
 
 /* Someone asking to be left alone, in the wording people actually use. */

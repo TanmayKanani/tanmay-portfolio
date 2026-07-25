@@ -12,7 +12,7 @@ import path from 'node:path';
 import readline from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
 
-import { config, paths, configWarnings, loadProfile } from './config.js';
+import { config, paths, configWarnings, loadProfile, writeEnvKeys } from './config.js';
 import { log } from './logger.js';
 import { stats, outreach, suppressions, companies, contacts, db } from './db.js';
 import { verifyEmail } from './contacts/verify.js';
@@ -23,7 +23,7 @@ import { sendQueued, senderIdentity } from './pipeline/send.js';
 import { queueFollowUps } from './pipeline/followup.js';
 import { syncReplies, syncBounces } from './pipeline/replies.js';
 import { exportTracker } from './export/xlsx.js';
-import { getAuthUrl, exchangeCode, isAuthorized, disconnect } from './mail/gmail.js';
+import { getAuthUrl, exchangeCode, isAuthorized, disconnect, transportLabel, verifyAppPassword } from './mail/index.js';
 import { createApp } from './server.js';
 import { startScheduler } from './scheduler.js';
 import { slugify, normalizeDomain } from './util.js';
@@ -69,9 +69,10 @@ ${C.bold}Usage${C.reset}  node bin/hunter.js <command> [options]
 ${C.bold}Setup${C.reset}
   init [--resume <pdf>]   Create .env + config/profile.json, copy in your resume
   doctor                  Check your setup and report what is not ready
-  auth                    Connect your Gmail account (OAuth)
+  auth                    Connect Gmail with an app password (2 minutes)
+  auth --oauth            Connect via Google Cloud OAuth instead
   auth --status           Show the connected account
-  auth --disconnect       Forget the stored tokens
+  auth --disconnect       Forget the stored credentials
 
 ${C.bold}Pipeline${C.reset}
   discover  [--limit 50] [--min-score 0.25]   Find remote companies hiring
@@ -132,11 +133,10 @@ async function cmdInit() {
   say(`${C.bold}Next:${C.reset}`);
   say('  1. Edit config/profile.json (your name, bio, highlights, links)');
   say('  2. Put your resume at assets/resume.pdf');
-  say('  3. Put your Google OAuth client id/secret in .env');
-  say('  4. node bin/hunter.js auth');
-  say('  5. node bin/hunter.js discover && node bin/hunter.js contacts');
-  say('  6. node bin/hunter.js queue && node bin/hunter.js review');
-  say('  7. node bin/hunter.js send        (add --live when you are happy)');
+  say('  3. node bin/hunter.js auth      (connects Gmail in about 2 minutes)');
+  say('  4. node bin/hunter.js discover && node bin/hunter.js contacts');
+  say('  5. node bin/hunter.js queue && node bin/hunter.js review');
+  say('  6. node bin/hunter.js send        (add --live when you are happy)');
 }
 
 async function cmdAuth() {
@@ -152,7 +152,50 @@ async function cmdAuth() {
   }
   if (isAuthorized() && !flags.force) {
     const id = await senderIdentity();
-    say(`${C.green}✓${C.reset} Already connected as ${id?.email || 'unknown'} (use --force to re-authorize).`);
+    say(`${C.green}✓${C.reset} Already connected as ${id?.email || 'unknown'} via ${transportLabel()}.`);
+    say(`${C.dim}  Use --force to reconnect.${C.reset}`);
+    return;
+  }
+
+  /* Walk through the app password route, which needs no Google Cloud project.
+     Writing the answers straight into .env means the reader never has to find
+     and hand-edit the file. */
+  if (!flags.oauth) {
+    say('');
+    say(`${C.bold}Connect Gmail${C.reset}  ${C.dim}(app password — about two minutes)${C.reset}`);
+    say('');
+    say('  1. Turn on 2-Step Verification, if it is not already on:');
+    say(`     ${C.gold}https://myaccount.google.com/security${C.reset}`);
+    say('');
+    say('  2. Create an app password — choose "Mail", name it anything:');
+    say(`     ${C.gold}https://myaccount.google.com/apppasswords${C.reset}`);
+    say('');
+    say(`  3. Paste the 16 characters below.  ${C.dim}(Prefer OAuth? Run: hunter auth --oauth)${C.reset}`);
+    say('');
+
+    const address = (await ask('  Your Gmail address: ')).trim();
+    if (!address) return say(`${C.red}✗${C.reset} Cancelled.`);
+    const password = (await ask('  App password:       ')).replace(/\s+/g, '');
+    if (!password) return say(`${C.red}✗${C.reset} Cancelled.`);
+
+    // Prove the credentials work before writing them anywhere.
+    say(`\n  ${C.dim}Checking…${C.reset}`);
+    config.smtp.address = address;
+    config.smtp.appPassword = password;
+    try {
+      await verifyAppPassword();
+    } catch (err) {
+      config.smtp.address = '';
+      config.smtp.appPassword = '';
+      say(`\n  ${C.red}✗${C.reset} Google rejected those credentials.\n`);
+      say(`    ${err.message}\n`);
+      say('    Most often this means 2-Step Verification is off, or the');
+      say('    password was mistyped. App passwords are 16 letters, no digits.');
+      return;
+    }
+
+    writeEnvKeys({ GMAIL_ADDRESS: address, GMAIL_APP_PASSWORD: password });
+    say(`\n  ${C.green}✓${C.reset} Connected as ${address} — saved to .env\n`);
     return;
   }
 
@@ -258,10 +301,12 @@ async function cmdDoctor() {
   say(`  ${fs.existsSync(paths.resume) ? ok(`Resume at ${path.relative(paths.root, paths.resume)}`) : meh('No resume — emails will send without an attachment')}`);
   say(`  ${config.anthropic.apiKey ? ok(`Claude enabled (${config.anthropic.model})`) : meh('No ANTHROPIC_API_KEY — emails use the built-in templates')}`);
 
-  const gmail = config.google.clientId && config.google.clientSecret;
-  say(`  ${gmail ? ok('Google OAuth credentials set') : no('No Google OAuth credentials — sending is disabled')}`);
-  if (gmail) {
-    say(`  ${(await isAuthorized()) ? ok('Gmail connected') : meh('Gmail not connected — run: node bin/hunter.js auth')}`);
+  if (isAuthorized()) {
+    const id = await senderIdentity();
+    say(`  ${ok(`Gmail connected as ${id?.email || 'unknown'} via ${transportLabel()}`)}`);
+  } else {
+    say(`  ${no('Gmail not connected — sending is disabled')}`);
+    say(`    ${C.dim}Fix in about two minutes:  node bin/hunter.js auth${C.reset}`);
   }
 
   say('');

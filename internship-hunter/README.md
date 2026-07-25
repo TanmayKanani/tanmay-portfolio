@@ -71,10 +71,34 @@ node bin/hunter.js serve         # http://127.0.0.1:4300
 
 ---
 
-## Setting up Gmail
+## Connecting Gmail
 
-You need a Google Cloud project. It takes about three minutes and costs
-nothing.
+Two ways, both first-party Google. Mail always leaves from *your* account —
+nothing is relayed through a third party.
+
+### App password — about two minutes (recommended)
+
+```bash
+node bin/hunter.js auth
+```
+
+It walks you through it, checks the credentials against Google before saving,
+and writes them to `.env`. You can do the same thing in the dashboard under
+**Settings**. The two steps it asks for:
+
+1. Turn on 2-Step Verification — [myaccount.google.com/security](https://myaccount.google.com/security)
+2. Create an app password (choose "Mail") — [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
+
+Sending goes over SMTP; replies and bounces are read over IMAP. The password
+lives only in `.env` on your machine, written `0600`, and is gitignored.
+
+> Some college, office and public networks block outbound mail ports (465 and
+> 993). If the check times out, that's why — try a phone hotspot, or use OAuth
+> below, which works over plain HTTPS.
+
+### OAuth — about fifteen minutes
+
+No password stored, and access is revocable from your Google account page.
 
 1. [console.cloud.google.com](https://console.cloud.google.com) → create a project
 2. **APIs & Services → Library** → enable the **Gmail API**
@@ -82,11 +106,13 @@ nothing.
 4. **Credentials → Create credentials → OAuth client ID → Web application**
 5. Add the redirect URI exactly:
    `http://localhost:4300/auth/google/callback`
-6. Copy the client ID and secret into `.env`
+6. Copy the client ID and secret into `.env`, then run `node bin/hunter.js auth --oauth`
 
-The app requests two scopes: `gmail.send` (to send) and `gmail.readonly` (to
-notice replies and bounces so it stops following up). Tokens are written to
+It requests two scopes: `gmail.send` and `gmail.readonly` (to notice replies
+and bounces so it stops following up). Tokens are written to
 `data/google-tokens.json` with `0600` permissions and are gitignored.
+
+If both methods are configured, the app password is used.
 
 ## Setting up Claude (optional)
 
@@ -231,7 +257,7 @@ internship-hunter/
     ├── discovery/             job boards, scoring, domain resolution
     ├── contacts/              scraping, patterns, verification
     ├── personalize/           Claude + templates + draft validation
-    ├── mail/                  Gmail OAuth, MIME construction
+    ├── mail/                  transport selection, SMTP+IMAP, OAuth, MIME
     ├── pipeline/              queue, send, follow-up, reply sync
     └── export/xlsx.js         Excel tracker
 ```
@@ -298,6 +324,15 @@ from [nodejs.org](https://nodejs.org).
 **The page loads but every panel is empty** — that's correct on a fresh
 install. There's no data until you run `discover`, or add a company by hand
 with `hunter add`.
+
+**"Could not reach Gmail. The connection timed out."** — your network blocks
+outbound mail ports (465/993). Common on college, office and public Wi-Fi. Use
+a phone hotspot, or switch to the OAuth method, which works over HTTPS.
+
+**"Google rejected the credentials."** — app passwords are 16 lowercase
+letters with no digits, and 2-Step Verification must be on for the account.
+Generate a fresh one at
+[myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords).
 
 ## Notes
 

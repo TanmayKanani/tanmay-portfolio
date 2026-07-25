@@ -57,6 +57,7 @@ export function buildMimeMessage(opts) {
     subject,
     body,
     attachments = [],
+    attachmentNames = {},
     inReplyTo = null,
     references = [],
     messageId = generateMessageId(),
@@ -96,7 +97,10 @@ export function buildMimeMessage(opts) {
   ];
 
   for (const file of present) {
-    const name = path.basename(file);
+    // An attachment named "resume.pdf" is anonymous in a recruiter's inbox
+    // and collides with every other applicant's. Allow a display name that
+    // differs from the filename on disk.
+    const name = attachmentNames[file] || path.basename(file);
     const type = MIME_TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream';
     parts.push(
       `--${boundary}`,
